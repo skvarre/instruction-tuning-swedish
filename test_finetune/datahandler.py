@@ -21,8 +21,9 @@ MAX_SEQ_LENGTH = 2048
 default_model = "AI-Sweden-Models/gpt-sw3-126m"
 tokenizer = AutoTokenizer.from_pretrained(default_model)
 
-#TODO: Should Attention Mask be included in the tokenized tensors?
-
+# TODO:
+#      Should Attention Mask be included in the tokenized tensors? 
+#      May not be needed when padding is used?
 def handle_data(file):
     """
     Tokenizes the data in the jsonl file and packs it into train and eval tensors. 
