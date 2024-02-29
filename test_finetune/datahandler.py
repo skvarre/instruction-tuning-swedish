@@ -21,6 +21,8 @@ MAX_SEQ_LENGTH = 2048
 default_model = "AI-Sweden-Models/gpt-sw3-126m"
 tokenizer = AutoTokenizer.from_pretrained(default_model)
 
+#TODO: Should Attention Mask be included in the tokenized tensors?
+
 def handle_data(file):
     """
     Tokenizes the data in the jsonl file and packs it into train and eval tensors. 
@@ -108,7 +110,7 @@ if __name__ == '__main__':
             print("Model not found, please check model name. E.g. AI-Sweden-Models/gpt-sw3-126m")
             exit()
     else:
-        print("No model specified for tokenization, using default model: AI-Sweden-Models/gpt-sw3-126m")
+        print("No model tokenizer specified, using default model: AI-Sweden-Models/gpt-sw3-126m")
 
     if args.file:
         handle_data(args.file)
