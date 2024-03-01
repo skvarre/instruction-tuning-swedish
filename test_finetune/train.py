@@ -36,7 +36,7 @@ class CLMDataset(torch.utils.data.Dataset):
     def __len__(self):
         return self.input_ids.size(0)
         
-def prepare_for_training(model, train_data, eval_data, lr, output):
+def train(model, train_data, eval_data, lr, output):
 
     train_dataset = CLMDataset(train_data)
     eval_dataset = CLMDataset(eval_data)
@@ -84,11 +84,6 @@ def prepare_for_training(model, train_data, eval_data, lr, output):
 
     generated_text = tokenizer.decode(generated_token_ids, skip_special_tokens=True)
     print(generated_text)
-    
-    
-
-def train(model, data):
-    pass
 
 
 if __name__ == '__main__':
@@ -111,7 +106,7 @@ if __name__ == '__main__':
     else:
         model = AutoModelForCausalLM.from_pretrained(DEFAULT_MODEL).to(device)
 
-    prepare_for_training(model, train_data, eval_data, args.lr, args.output)
+    train(model, train_data, eval_data, args.lr, args.output)
 
 
     
