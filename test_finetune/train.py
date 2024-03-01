@@ -2,7 +2,7 @@
 Instruction fine-tuning of a model. 
 
 Usage:
-    python train.py [--model MODEL] [--data DATA]
+    python train.py [--model MODEL] [--data DATA] [--lr learning_rate]
 
     model: 
         The name of the HuggingFace transformer model to use for training. Default is "AI-Sweden-Models/gpt-sw3-126m"
@@ -10,7 +10,6 @@ Usage:
         The name of train and eval data to use for training, without adding "_train.pt" or "_eval.pt" as this is already assumed.
     """
 from transformers import AutoModelForCausalLM, default_data_collator, TrainingArguments, AutoTokenizer
-from torch.utils.data import DataLoader
 import argparse
 import torch
 from trl import SFTTrainer
@@ -37,21 +36,13 @@ class CLMDataset(torch.utils.data.Dataset):
     def __len__(self):
         return self.input_ids.size(0)
         
-def prepare_for_training(model, train_data, eval_data, lr):
-
-    # train_dataloader = DataLoader(train_data, 
-    #                               batch_size=batch_size,
-    #                               shuffle=False)
-    
-    # eval_dataloader = DataLoader(eval_data,
-    #                              batch_size=batch_size,
-    #                              shuffle=False)
+def prepare_for_training(model, train_data, eval_data, lr, output):
 
     train_dataset = CLMDataset(train_data)
     eval_dataset = CLMDataset(eval_data)
     
     training_args = TrainingArguments(
-        output_dir='./results',          # output directory
+        output_dir=output,          # output directory
         num_train_epochs=10,              # total number of training epochs
         per_device_train_batch_size=3,  # batch size per device during training
         per_device_eval_batch_size=3,   # batch size for evaluation
@@ -72,6 +63,9 @@ def prepare_for_training(model, train_data, eval_data, lr):
     )
 
     trainer.train()
+    # Save model to disk
+    trainer.save_model()
+    print("Model saved to disk.")
 
     model.eval()
 
@@ -102,6 +96,7 @@ if __name__ == '__main__':
     parser.add_argument('--model', type=str, default=DEFAULT_MODEL)
     parser.add_argument('--data', type=str)
     parser.add_argument('--lr', type=float, default=1e-4)
+    parser.add_argument('--output', type=str, default="./results")
     args = parser.parse_args()
 
     if args.data:
@@ -116,7 +111,7 @@ if __name__ == '__main__':
     else:
         model = AutoModelForCausalLM.from_pretrained(DEFAULT_MODEL).to(device)
 
-    prepare_for_training(model, train_data, eval_data, args.lr)
+    prepare_for_training(model, train_data, eval_data, args.lr, args.output)
 
 
     
