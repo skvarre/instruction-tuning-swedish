@@ -6,6 +6,8 @@ Usage:
     python inference.py [--model MODEL]
     model: 
         The name of the HuggingFace transformer model to use for inference. Default is "AI-Sweden-Models/gpt-sw3-126m" 
+    parse:
+        Whether to parse the input prompt into a format that the model can understand. Default is True.
 """
 
 from transformers import AutoModelForCausalLM, AutoTokenizer
@@ -29,6 +31,7 @@ def generate(model, tokenizer, prompt, max_length=50):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--model', type=str, default="results")
+    parser.add_argument('--p', type=str, default='True')
     args = parser.parse_args()
     model_path = args.model if args.model else "results"
     
@@ -46,5 +49,5 @@ if __name__ == '__main__':
             print("Exiting...")
             exit(0)
         else:
-            parsed_prompt = parse_input(prompt)
+            parsed_prompt = parse_input(prompt) if args.p == 'True' else prompt
             print(generate(model, tokenizer, parsed_prompt))

@@ -164,4 +164,5 @@ cython_debug/
 *.json
 *.pt
 
-/test_finetune/results/*
+/test_finetune/results*/*
+/test_finetune/wandb/*

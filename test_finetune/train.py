@@ -48,19 +48,21 @@ def train(model, train_data, eval_data, lr, output, wandb=False):
     eval_dataset = CLMDataset(eval_data)
     
     training_args = TrainingArguments(
-        output_dir=output,          # output directory
-        num_train_epochs=10,              # total number of training epochs
-        per_device_train_batch_size=3,  # batch size per device during training
-        per_device_eval_batch_size=3,   # batch size for evaluation
-        warmup_steps=500,                # number of warmup steps for learning rate scheduler
-        weight_decay=0.01,               # strength of weight decay
-        lr_scheduler_type='cosine',      # learning rate scheduler type
-        learning_rate=lr,               # learning rate
-        logging_steps=10
+        report_to="wandb" if wandb else None, # enable logging to wandb
+        output_dir=output,                    # output directory
+        num_train_epochs=10,                  # total number of training epochs
+        per_device_train_batch_size=1,        # batch size per device during training
+        per_device_eval_batch_size=1,         # batch size for evaluation
+        warmup_steps=500,                     # number of warmup steps for learning rate scheduler
+        weight_decay=0.01,                    # strength of weight decay
+        lr_scheduler_type='cosine',           # learning rate scheduler type
+        learning_rate=lr,                     # learning rate
+        logging_steps=10,                     # log every x updates
+        evaluation_strategy="steps",          # evaluate every eval_steps
+        eval_steps=20,                        # evaluation steps
     )
 
     trainer = SFTTrainer(
-        report_to="wandb",
         model=model,
         args=training_args,
         max_seq_length=2048,
@@ -68,7 +70,7 @@ def train(model, train_data, eval_data, lr, output, wandb=False):
         eval_dataset=eval_dataset,
         dataset_text_field='text',
     )
-
+    print(f"Training model with learning rate {lr}, output directory {output} and wandb logging set to {wandb}.")
     trainer.train()
     # Save model to disk
     trainer.save_model()
@@ -92,7 +94,7 @@ def train(model, train_data, eval_data, lr, output, wandb=False):
     generated_text = tokenizer.decode(generated_token_ids, skip_special_tokens=True)
     print(generated_text)
 
-
+#TODO: Implementation of wandb logging is not correct. type=bool behaves differently than intuitive.
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--model', type=str, default=DEFAULT_MODEL)
@@ -115,8 +117,3 @@ if __name__ == '__main__':
         model = AutoModelForCausalLM.from_pretrained(DEFAULT_MODEL).to(device)
 
     train(model, train_data, eval_data, args.lr, args.output, args.wandb)
-
-
-    
-     
-
