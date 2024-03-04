@@ -1,13 +1,19 @@
 """
-Instruction fine-tuning of a model. 
+Instruction fine-tuning of a huggingface transformer model using next-step prediction on everything.   
 
 Usage:
-    python train.py [--model MODEL] [--data DATA] [--lr learning_rate]
+    python train.py [--model MODEL] [--data DATA] [--lr learning_rate] [--output output_dir] [--wandb wandb]
 
     model: 
         The name of the HuggingFace transformer model to use for training. Default is "AI-Sweden-Models/gpt-sw3-126m"
     data: 
         The name of train and eval data to use for training, without adding "_train.pt" or "_eval.pt" as this is already assumed.
+    learning_rate:
+        The learning rate to use for training. Default is 1e-4.
+    output_dir:
+        The directory to save the trained model to. Default is "./results".
+    wandb:
+        Whether to use wandb for logging. Default is False.
     """
 from transformers import AutoModelForCausalLM, default_data_collator, TrainingArguments, AutoTokenizer
 import argparse
@@ -36,7 +42,7 @@ class CLMDataset(torch.utils.data.Dataset):
     def __len__(self):
         return self.input_ids.size(0)
         
-def train(model, train_data, eval_data, lr, output):
+def train(model, train_data, eval_data, lr, output, wandb=False):
 
     train_dataset = CLMDataset(train_data)
     eval_dataset = CLMDataset(eval_data)
@@ -54,6 +60,7 @@ def train(model, train_data, eval_data, lr, output):
     )
 
     trainer = SFTTrainer(
+        report_to="wandb",
         model=model,
         args=training_args,
         max_seq_length=2048,
@@ -92,6 +99,7 @@ if __name__ == '__main__':
     parser.add_argument('--data', type=str)
     parser.add_argument('--lr', type=float, default=1e-4)
     parser.add_argument('--output', type=str, default="./results")
+    parser.add_argument('--wandb', type=bool, default=False)
     args = parser.parse_args()
 
     if args.data:
@@ -106,7 +114,7 @@ if __name__ == '__main__':
     else:
         model = AutoModelForCausalLM.from_pretrained(DEFAULT_MODEL).to(device)
 
-    train(model, train_data, eval_data, args.lr, args.output)
+    train(model, train_data, eval_data, args.lr, args.output, args.wandb)
 
 
     

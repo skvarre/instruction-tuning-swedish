@@ -163,3 +163,5 @@ cython_debug/
 *.jsonl
 *.json
 *.pt
+
+/test_finetune/results/*

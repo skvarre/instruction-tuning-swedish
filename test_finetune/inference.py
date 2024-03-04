@@ -22,7 +22,7 @@ def parse_output(output):
     return output.split("")[1]
 
 def generate(model, tokenizer, prompt, max_length=50):    
-    inputs = tokenizer.encode(prompt, return_tensors="pt")
+    inputs = tokenizer.encode(prompt, return_tensors="pt").to(device)
     outputs = model.generate(inputs, max_length=max_length, do_sample=True, pad_token_id=tokenizer.eos_token_id)
     return tokenizer.decode(outputs[0], skip_special_tokens=True)
 
@@ -33,9 +33,9 @@ if __name__ == '__main__':
     model_path = args.model if args.model else "results"
     
     print("Loading model...")
-    model = AutoModelForCausalLM.from_pretrained(args.model)
+    model = AutoModelForCausalLM.from_pretrained(args.model).to(device)
     tokenizer = AutoTokenizer.from_pretrained(model_path)
-    print("Model loaded.")
+    print(f"Model loaded on {"GPU" if device == "cuda:0" else "CPU"}.")
 
     while True:
         print("Type prompt or press ENTER to exit:")
