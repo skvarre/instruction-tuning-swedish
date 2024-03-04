@@ -1,14 +1,15 @@
 """
 Datahandler tokenizes raw data into instruction-tune format and saves it to file in train and eval split.
-Can also be used as a module to return tensor. 
+Can also be used as a module to return tensors. 
 
 Usage:
     If used natively. Run the following command in the terminal:
 
-    python datahandler.py --model [model_name] --file [filename]
+    python datahandler.py --model [model_name] --file [filename] --split [split]
     
     model_name: The name of the HuggingFace model to use for tokenization. Default is "AI-Sweden-Models/gpt-sw3-126m"
     filename: The name of the jsonl file to tokenize.
+    split: The percentage of data to use for training. Default is 0.8.
 """
 from transformers import AutoTokenizer
 import torch 
@@ -23,10 +24,10 @@ tokenizer = AutoTokenizer.from_pretrained(default_model)
 
 # TODO:
 #      Should Attention Mask be included in the tokenized tensors? 
-#      May not be needed when padding is used?
+#      May not be needed when packing is used?
 def handle_data(file):
     """
-    Tokenizes the data in the jsonl file and packs it into train and eval tensors. 
+    Tokenizes the data in the jsonl file in a PACKING manner, and stores it into train and eval tensors. 
     Saves the tokenized tensors to file, or returns it if used as a module.
     """
     bos_token = tokenizer.special_tokens_map['bos_token']
@@ -35,7 +36,7 @@ def handle_data(file):
     # Split data into train and eval
     with open(file, 'r') as f:
         lines = f.readlines()
-        split = int(len(lines) * args.split)
+        split = int(len(lines) * args.split if args.split else 0.8)
         train = lines[:split]
         eval = lines[split:]
 
