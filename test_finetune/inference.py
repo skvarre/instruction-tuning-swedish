@@ -17,16 +17,17 @@ import torch
 device = "cuda:0" if torch.cuda.is_available() else "cpu"
 original_model = AutoModelForCausalLM.from_pretrained("AI-Sweden-Models/gpt-sw3-126m")
 
+#TODO: Hardcoded. Assumes bos_token = <s> and eos_token = <|endoftext|>.
 def parse_input(prompt):
-    return f"<|endoftext|>\n<s> User:\n{prompt}\n"
+    return f"<|endoftext|>\n<s>User\n{prompt}<s>\n"
 
-def parse_output(output):
-    return output.split("")[1]
-
-def generate(model, tokenizer, prompt, max_length=50):    
+def generate(model, tokenizer, prompt, max_length=100):    
     inputs = tokenizer.encode(prompt, return_tensors="pt").to(device)
     outputs = model.generate(inputs, max_length=max_length, do_sample=True, pad_token_id=tokenizer.eos_token_id)
-    return tokenizer.decode(outputs[0], skip_special_tokens=True)
+    output = tokenizer.decode(outputs[0], skip_special_tokens=False)
+    # Stop at the first <s> token.
+    return "".join(output.split('<s>')[0:3])
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

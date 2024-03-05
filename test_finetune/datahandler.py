@@ -78,16 +78,16 @@ def tokenize(line : dict, bos_token : str, eos_token : str) -> torch.Tensor:
     
     Example of format:\n
     <|endoftext|>\n
-    <s> User\n
+    <s>User\n
     Hello, how are you?\n
-    <s> Bot\n
+    <s>Bot\n
     I am fine, thank you.\n
     <s> 
     ... 
     """
     turns = line['text']
     output = [
-        f"{bos_token} {ROLEMAP[role]}\n{msg}\n"
+        f"{bos_token}{ROLEMAP[role]}\n{msg}\n"
         for turn in turns
         for role, msg in turn.items()
     ]
