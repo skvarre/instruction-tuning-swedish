@@ -2,7 +2,7 @@
 Instruction fine-tuning of a huggingface transformer model using next-step prediction on everything.   
 
 Usage:
-    python train.py [--model MODEL] [--data DATA] [--lr learning_rate] [--output output_dir] [--wandb wandb]
+    python train.py [--model MODEL] [--data DATA] [--lr learning_rate] [--output output_dir] [--wandb wandb] [--epochs epochs]
 
     model: 
         The name of the HuggingFace transformer model to use for training. Default is "AI-Sweden-Models/gpt-sw3-126m"
@@ -14,6 +14,8 @@ Usage:
         The directory to save the trained model to. Default is "./results".
     wandb:
         Whether to use wandb for logging. Default is False.
+    epochs:
+        The number of epochs to train for. Default is 3.
     """
 from transformers import AutoModelForCausalLM, default_data_collator, TrainingArguments, AutoTokenizer
 import argparse
@@ -42,7 +44,7 @@ class CLMDataset(torch.utils.data.Dataset):
     def __len__(self):
         return self.input_ids.size(0)
         
-def train(model, train_data, eval_data, lr, output, wandb=False):
+def train(model, train_data, eval_data, lr, output, wandb=False, epochs=3):
 
     train_dataset = CLMDataset(train_data)
     eval_dataset = CLMDataset(eval_data)
@@ -50,9 +52,9 @@ def train(model, train_data, eval_data, lr, output, wandb=False):
     training_args = TrainingArguments(
         report_to="wandb" if wandb else None, # enable logging to wandb
         output_dir=output,                    # output directory
-        num_train_epochs=3,                  # total number of training epochs
-        per_device_train_batch_size=1,        # batch size per device during training
-        per_device_eval_batch_size=1,         # batch size for evaluation
+        num_train_epochs=epochs,              # total number of training epochs
+        per_device_train_batch_size=3,        # batch size per device during training
+        per_device_eval_batch_size=3,         # batch size for evaluation
         warmup_steps=500,                     # number of warmup steps for learning rate scheduler
         weight_decay=0.01,                    # strength of weight decay
         lr_scheduler_type='cosine',           # learning rate scheduler type
@@ -60,7 +62,7 @@ def train(model, train_data, eval_data, lr, output, wandb=False):
         logging_steps=10,                     # log every x updates
         evaluation_strategy="steps",          # evaluate every eval_steps
         eval_steps=20,                        # evaluation steps
-        gradient_accumulation_steps=2,        # gradient accumulation steps
+        # gradient_accumulation_steps=2,        # gradient accumulation steps
     )
 
     trainer = SFTTrainer(
@@ -77,24 +79,6 @@ def train(model, train_data, eval_data, lr, output, wandb=False):
     trainer.save_model()
     print("Model saved to disk.")
 
-    model.eval()
-
-    # Create a prompt
-    prompt = "<|endoftext|>\n<s> User:\nVad är 4 plus 4?\n"
-    input_ids = tokenizer(prompt, return_tensors="pt")["input_ids"].to(device)
-
-    # Generate a response
-    generated_token_ids = model.generate(
-        inputs = input_ids,
-        max_new_tokens = 200,
-        do_sample=True,
-        temperature = 0.6,
-        top_p=1
-    )[0]
-
-    generated_text = tokenizer.decode(generated_token_ids, skip_special_tokens=True)
-    print(generated_text)
-
 #TODO: Implementation of wandb logging is not correct. type=bool behaves differently than intuitive.
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -103,6 +87,7 @@ if __name__ == '__main__':
     parser.add_argument('--lr', type=float, default=1e-4)
     parser.add_argument('--output', type=str, default="./results")
     parser.add_argument('--wandb', type=bool, default=False)
+    parser.add_argument('--epochs', type=int, default=3)
     args = parser.parse_args()
 
     if args.data:
@@ -117,4 +102,4 @@ if __name__ == '__main__':
     else:
         model = AutoModelForCausalLM.from_pretrained(DEFAULT_MODEL).to(device)
 
-    train(model, train_data, eval_data, args.lr, args.output, args.wandb)
+    train(model, train_data, eval_data, args.lr, args.output, args.wandb, args.epochs)

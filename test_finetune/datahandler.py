@@ -8,7 +8,7 @@ Usage:
     python datahandler.py --model [model_name] --file [filename] --split [split]
     
     model_name: The name of the HuggingFace model to use for tokenization. Default is "AI-Sweden-Models/gpt-sw3-126m"
-    filename: The name of the jsonl file to tokenize.
+    file: The name of the jsonl file to tokenize.
     split: The percentage of data to use for training. Default is 0.8.
 """
 from transformers import AutoTokenizer
@@ -16,6 +16,7 @@ import torch
 import argparse
 import json 
 import numpy as np
+from tqdm import tqdm
 
 ROLEMAP = {'<human>': 'User', 'content': 'User', '<bot>': 'Bot'}
 MAX_SEQ_LENGTH = 2048 
@@ -39,12 +40,14 @@ def handle_data(file):
         split = int(len(lines) * args.split if args.split else 0.8)
         train = lines[:split]
         eval = lines[split:]
+        print("Length of train data:", len(train)) 
+        print("Length of eval data:", len(eval))
 
     return_tensors = []
     
     for f in [train, eval]:
         tensors = []
-        for line in f:
+        for line in tqdm(f):
             line = json.loads(line)
             tensors.append(tokenize(line, bos_token, eos_token))
 
@@ -67,7 +70,7 @@ def handle_data(file):
         eval_filename = file.split('.')[0] + '_eval' + '.pt'
         torch.save(padded_tensor, train_filename)
         torch.save(padded_tensor, eval_filename)
-        print(f"Saved tokenized tensors to {train_filename} and {eval_filename}")
+        print(f"Saved tokenized tensors to {train_filename} and {eval_filename}.")
     else:
         return return_tensors[0], return_tensors[1]
 
@@ -91,7 +94,6 @@ def tokenize(line : dict, bos_token : str, eos_token : str) -> torch.Tensor:
     output = []
     for turn in turns:
         for role, msg in turn.items():
-            print(role, prev_role)
             if ROLEMAP[role] != prev_role:
                 output.append(f"{bos_token}{ROLEMAP[role]}\n{msg}\n")
             else:
