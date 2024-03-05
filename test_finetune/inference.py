@@ -18,7 +18,7 @@ device = "cuda:0" if torch.cuda.is_available() else "cpu"
 
 #TODO: Hardcoded. Assumes bos_token = <s> and eos_token = <|endoftext|>.
 def parse_input(prompt, beginning_of_conversation):
-    parsed_output = f"\n<s>User\n{prompt}\n<s>Bot"
+    parsed_output = f"\n<s>User\n{prompt}\n<s>Bot\n"
     return f"<|endoftext|>{parsed_output}" if beginning_of_conversation else parsed_output
     # return f"<|endoftext|>\n<s>User\n{prompt}\n<s>Bot"
 

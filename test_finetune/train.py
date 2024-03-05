@@ -50,7 +50,7 @@ def train(model, train_data, eval_data, lr, output, wandb=False):
     training_args = TrainingArguments(
         report_to="wandb" if wandb else None, # enable logging to wandb
         output_dir=output,                    # output directory
-        num_train_epochs=10,                  # total number of training epochs
+        num_train_epochs=3,                  # total number of training epochs
         per_device_train_batch_size=1,        # batch size per device during training
         per_device_eval_batch_size=1,         # batch size for evaluation
         warmup_steps=500,                     # number of warmup steps for learning rate scheduler
@@ -60,6 +60,7 @@ def train(model, train_data, eval_data, lr, output, wandb=False):
         logging_steps=10,                     # log every x updates
         evaluation_strategy="steps",          # evaluate every eval_steps
         eval_steps=20,                        # evaluation steps
+        gradient_accumulation_steps=2,        # gradient accumulation steps
     )
 
     trainer = SFTTrainer(

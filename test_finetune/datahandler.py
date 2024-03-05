@@ -86,11 +86,17 @@ def tokenize(line : dict, bos_token : str, eos_token : str) -> torch.Tensor:
     ... 
     """
     turns = line['text']
-    output = [
-        f"{bos_token}{ROLEMAP[role]}\n{msg}\n"
-        for turn in turns
-        for role, msg in turn.items()
-    ]
+    # Keep track of previous role to determine to handle content cases. 
+    prev_role = None
+    output = []
+    for turn in turns:
+        for role, msg in turn.items():
+            print(role, prev_role)
+            if ROLEMAP[role] != prev_role:
+                output.append(f"{bos_token}{ROLEMAP[role]}\n{msg}\n")
+            else:
+                output.append(f"{msg}\n")
+            prev_role = ROLEMAP[role]
     output.append(bos_token)
     output = f"\n{eos_token}\n" + ''.join(output)
     output_tensor = tokenizer.encode(output, return_tensors="pt", padding=False)
