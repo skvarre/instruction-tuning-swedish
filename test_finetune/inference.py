@@ -15,7 +15,6 @@ import argparse
 import torch 
 
 device = "cuda:0" if torch.cuda.is_available() else "cpu"
-original_model = AutoModelForCausalLM.from_pretrained("AI-Sweden-Models/gpt-sw3-126m")
 
 #TODO: Hardcoded. Assumes bos_token = <s> and eos_token = <|endoftext|>.
 def parse_input(prompt, beginning_of_conversation):
