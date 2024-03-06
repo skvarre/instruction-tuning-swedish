@@ -5,7 +5,7 @@ AutoModelForCausalLM and AutoTokenizer.
 Usage:
     python inference.py [--model MODEL]
     model: 
-        The name of the HuggingFace transformer model to use for inference. Default is "AI-Sweden-Models/gpt-sw3-126m" 
+        The name of (or path to) the HuggingFace transformer model to use for inference.
     parse:
         Whether to parse the input prompt into a format that the model can understand. Default is True.
 """

@@ -2,25 +2,15 @@
 Instruction fine-tuning of a huggingface transformer model using next-step prediction on everything.   
 
 Usage:
-    python train.py [--model MODEL] [--data DATA] [--lr learning_rate] [--output output_dir] [--wandb wandb] [--epochs epochs]
+    python train.py [--model MODEL] [--data DATA] [--lr LR] [--output OUTPUT] [--epochs EPOCHS] [--lora] [--wandb]
 
-    model: 
-        The name of the HuggingFace transformer model to use for training. Default is "AI-Sweden-Models/gpt-sw3-126m"
-    data: 
-        The name of train and eval data to use for training, without adding "_train.pt" or "_eval.pt" as this is already assumed.
-    learning_rate:
-        The learning rate to use for training. Default is 1e-4.
-    output_dir:
-        The directory to save the trained model to. Default is "./results".
-    wandb:
-        Whether to use wandb for logging. Default is False.
-    epochs:
-        The number of epochs to train for. Default is 3.
-    """
+    Use python train.py -h to see the full list of arguments and their descriptions.
+"""
 from transformers import AutoModelForCausalLM, default_data_collator, TrainingArguments, AutoTokenizer
 import argparse
 import torch
 from trl import SFTTrainer
+from peft import AutoPeftModelForCausalLM
 
 DEFAULT_MODEL = "AI-Sweden-Models/gpt-sw3-126m"
 device = "cuda:0" if torch.cuda.is_available() else "cpu"
@@ -43,6 +33,15 @@ class CLMDataset(torch.utils.data.Dataset):
 
     def __len__(self):
         return self.input_ids.size(0)
+    
+
+# I would do this, except the packing of the data prevents it
+# since the last token is not always the last token in the tensor.
+# TODO: Fix datahandler to allow for this.
+# class CLMDataSetLastToken(torch.utils.data.Dataset):
+
+def test():
+    pass
         
 def train(model, train_data, eval_data, lr, output, wandb=False, epochs=3):
 
@@ -82,12 +81,15 @@ def train(model, train_data, eval_data, lr, output, wandb=False, epochs=3):
 #TODO: Implementation of wandb logging is not correct. type=bool behaves differently than intuitive.
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--model', type=str, default=DEFAULT_MODEL)
-    parser.add_argument('--data', type=str)
-    parser.add_argument('--lr', type=float, default=1e-4)
-    parser.add_argument('--output', type=str, default="./results")
-    parser.add_argument('--wandb', type=bool, default=False)
-    parser.add_argument('--epochs', type=int, default=3)
+    parser.add_argument('--model', type=str, default=DEFAULT_MODEL, help="The name of (or path to) the HuggingFace transformer model to use for training. Default is 'AI-Sweden-Models/gpt-sw3-126m'.")
+    parser.add_argument('--data', type=str, help="The name of train and eval data to use for training, without adding '_train.pt' or '_eval.pt' as this is already assumed.")
+    parser.add_argument('--lr', type=float, default=1e-4, help="The learning rate to use for training. Default is 1e-4.")
+    parser.add_argument('--output', type=str, default="./results", help="The directory to save the trained model to. Default is './results'.")
+    parser.add_argument('--epochs', type=int, default=3, help="The number of epochs to train for. Default is 3.")
+    parser.add_argument('--lora', action='store_true', help="Whether to use LoRA for training. Default is False.")
+    parser.add_argument('--wandb', action='store_true', help="Whether to use wandb for logging. Default is False.")
+    parser.set_defaults(lora=False, wandb=False)
+
     args = parser.parse_args()
 
     if args.data:
@@ -102,4 +104,5 @@ if __name__ == '__main__':
     else:
         model = AutoModelForCausalLM.from_pretrained(DEFAULT_MODEL).to(device)
 
-    train(model, train_data, eval_data, args.lr, args.output, args.wandb, args.epochs)
+
+    # train(model, train_data, eval_data, args.lr, args.output, args.wandb, args.epochs)
