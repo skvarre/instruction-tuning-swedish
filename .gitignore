@@ -163,6 +163,6 @@ cython_debug/
 *.jsonl
 *.json
 *.pt
-
 results*/*
 /wandb/*
+/translation_models/*

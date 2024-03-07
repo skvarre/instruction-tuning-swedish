@@ -10,11 +10,9 @@ from transformers import AutoModelForCausalLM, default_data_collator, TrainingAr
 import argparse
 import torch
 from trl import SFTTrainer
-from peft import AutoPeftModelForCausalLM
 
 DEFAULT_MODEL = "AI-Sweden-Models/gpt-sw3-126m"
 device = "cuda:0" if torch.cuda.is_available() else "cpu"
-batch_size = 2
 tokenizer = AutoTokenizer.from_pretrained(DEFAULT_MODEL)
 
 class CLMDataset(torch.utils.data.Dataset):
@@ -40,8 +38,34 @@ class CLMDataset(torch.utils.data.Dataset):
 # TODO: Fix datahandler to allow for this.
 # class CLMDataSetLastToken(torch.utils.data.Dataset):
 
-def test():
-    pass
+def lora_train(model_id):
+    # Only import these if LoRA is used
+    from peft import AutoPeftModelForCausalLM, LoraConfig, BitsAndBytesConfig
+
+    quantization_config = BitsAndBytesConfig(
+        load_in_4bit=True, # Load model in 4bit mode
+        bnb_4bit_use_double_quantization=True, # Nested quantization 
+        bnb_4bit_quant_type="nf4", 
+        bnb_4bit_compute_dtype=torch.bfloat16
+    )
+
+    model = AutoModelForCausalLM(
+        model_id,
+        qunatization_config=quantization_config,
+        use_cache=False,
+        device_map="auto",
+        trust_remote_code=True
+    )
+    
+    model.config.pretraining_tp = 1
+
+    peft_config = LoraConfig(
+        lora_alpha=16,
+        lora_dropout=0.1,
+        r=64,
+        bias="none",
+        task_type="causal_lm"
+    )
         
 def train(model, train_data, eval_data, lr, output, wandb=False, epochs=3):
 
@@ -99,8 +123,11 @@ if __name__ == '__main__':
         print("No data provided. Exiting.")
         exit(1)
         
-    if args.model: 
-        model = AutoModelForCausalLM.from_pretrained(args.model, torch_dtype=torch.bfloat16).to(device)
+    if args.model:
+        if args.lora:
+            lora_train(args.model)
+        else:
+            model = AutoModelForCausalLM.from_pretrained(args.model, torch_dtype=torch.bfloat16).to(device)
     else:
         model = AutoModelForCausalLM.from_pretrained(DEFAULT_MODEL).to(device)
 
