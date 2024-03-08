@@ -166,3 +166,4 @@ cython_debug/
 results*/*
 /wandb/*
 /translation_models/*
+*.sh

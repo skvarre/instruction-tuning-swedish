@@ -56,7 +56,7 @@ def lora_train(model_id):
         device_map="auto",
         trust_remote_code=True
     )
-    
+
     model.config.pretraining_tp = 1
 
     peft_config = LoraConfig(
@@ -85,7 +85,7 @@ def train(model, train_data, eval_data, lr, output, wandb=False, epochs=3):
         logging_steps=10,                     # log every x updates
         evaluation_strategy="steps",          # evaluate every eval_steps
         eval_steps=20,                        # evaluation steps
-        # gradient_accumulation_steps=2,        # gradient accumulation steps
+        # gradient_accumulation_steps=2,      # gradient accumulation steps
     )
 
     trainer = SFTTrainer(
@@ -102,7 +102,6 @@ def train(model, train_data, eval_data, lr, output, wandb=False, epochs=3):
     trainer.save_model()
     print("Model saved to disk.")
 
-#TODO: Implementation of wandb logging is not correct. type=bool behaves differently than intuitive.
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--model', type=str, default=DEFAULT_MODEL, help="The name of (or path to) the HuggingFace transformer model to use for training. Default is 'AI-Sweden-Models/gpt-sw3-126m'.")
