@@ -10,10 +10,14 @@ from transformers import AutoModelForCausalLM, default_data_collator, TrainingAr
 import argparse
 import torch
 from trl import SFTTrainer
+import wandb
 
 DEFAULT_MODEL = "AI-Sweden-Models/gpt-sw3-126m"
 device = "cuda:0" if torch.cuda.is_available() else "cpu"
 tokenizer = AutoTokenizer.from_pretrained(DEFAULT_MODEL)
+
+#TODO: Build a class with next-step prediction on the last bot response.
+#Problem: Data is packed and does not keep track of indices. 
 
 class CLMDataset(torch.utils.data.Dataset):
     def __init__(self, input_ids):
@@ -33,14 +37,11 @@ class CLMDataset(torch.utils.data.Dataset):
         return self.input_ids.size(0)
     
 
-# I would do this, except the packing of the data prevents it
-# since the last token is not always the last token in the tensor.
-# TODO: Fix datahandler to allow for this.
-# class CLMDataSetLastToken(torch.utils.data.Dataset):
-
-def lora_train(model_id):
+#TODO: NOT DONE!
+def lora_train(model_id, train_data, eval_data, lr, output, wandb=False, epochs=3):
     # Only import these if LoRA is used
-    from peft import AutoPeftModelForCausalLM, LoraConfig, BitsAndBytesConfig
+    from peft import AutoPeftModelForCausalLM, LoraConfig, get_peft_model
+    from transformers import BitsAndBytesConfig
 
     quantization_config = BitsAndBytesConfig(
         load_in_4bit=True, # Load model in 4bit mode
@@ -49,9 +50,9 @@ def lora_train(model_id):
         bnb_4bit_compute_dtype=torch.bfloat16
     )
 
-    model = AutoModelForCausalLM(
+    model = AutoModelForCausalLM.from_pretrained(
         model_id,
-        qunatization_config=quantization_config,
+        quantization_config=quantization_config,
         use_cache=False,
         device_map="auto",
         trust_remote_code=True
@@ -66,8 +67,16 @@ def lora_train(model_id):
         bias="none",
         task_type="causal_lm"
     )
+
+    model = get_peft_model(model, peft_config)
+    train(model, train_data, eval_data, lr, output, wandb, epochs)
         
 def train(model, train_data, eval_data, lr, output, wandb=False, epochs=3):
+    
+    if wandb:
+        print("Select a name for the wandb run:")
+        run_name = input()
+        wandb.init(name=run_name)
 
     train_dataset = CLMDataset(train_data)
     eval_dataset = CLMDataset(eval_data)
@@ -84,7 +93,7 @@ def train(model, train_data, eval_data, lr, output, wandb=False, epochs=3):
         learning_rate=lr,                     # learning rate
         logging_steps=10,                     # log every x updates
         evaluation_strategy="steps",          # evaluate every eval_steps
-        eval_steps=20,                        # evaluation steps
+        eval_steps=50,                        # evaluation steps
         # gradient_accumulation_steps=2,      # gradient accumulation steps
     )
 
@@ -124,11 +133,11 @@ if __name__ == '__main__':
         
     if args.model:
         if args.lora:
-            lora_train(args.model)
+            lora_train(args.model, train_data, eval_data, args.lr, args.output, args.wandb, args.epochs)
         else:
             model = AutoModelForCausalLM.from_pretrained(args.model, torch_dtype=torch.bfloat16).to(device)
+            train(model, train_data, eval_data, args.lr, args.output, args.wandb, args.epochs)
     else:
         model = AutoModelForCausalLM.from_pretrained(DEFAULT_MODEL).to(device)
+        train(model, train_data, eval_data, args.lr, args.output, args.wandb, args.epochs)
 
-
-    # train(model, train_data, eval_data, args.lr, args.output, args.wandb, args.epochs)

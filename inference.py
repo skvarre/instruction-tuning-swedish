@@ -24,7 +24,13 @@ def parse_input(prompt, beginning_of_conversation):
 
 def generate(model, tokenizer, prompt, max_length=200):    
     inputs = tokenizer.encode(prompt, return_tensors="pt").to(device)
-    outputs = model.generate(inputs, max_length=max_length, do_sample=True, pad_token_id=tokenizer.pad_token_id)
+    outputs = model.generate(
+        inputs,
+        max_length=max_length,
+        do_sample=True,
+        pad_token_id=tokenizer.pad_token_id
+    )
+    
     output = tokenizer.decode(outputs[0], skip_special_tokens=False)
     # Stop at the first <s> token.
     return "".join(output.split('<s>')[0:3])
