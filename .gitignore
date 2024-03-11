@@ -167,3 +167,5 @@ results*/*
 /wandb/*
 /translation_models/*
 *.sh
+
+models/*

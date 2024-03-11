@@ -10,7 +10,6 @@ from transformers import AutoModelForCausalLM, default_data_collator, TrainingAr
 import argparse
 import torch
 from trl import SFTTrainer
-import wandb
 
 DEFAULT_MODEL = "AI-Sweden-Models/gpt-sw3-126m"
 device = "cuda:0" if torch.cuda.is_available() else "cpu"
@@ -38,7 +37,7 @@ class CLMDataset(torch.utils.data.Dataset):
     
 
 #TODO: NOT DONE!
-def lora_train(model_id, train_data, eval_data, lr, output, wandb=False, epochs=3):
+def lora_train(model_id, train_data, eval_data, lr, output, wandb=False, epochs=3, batch_size=3):
     # Only import these if LoRA is used
     from peft import AutoPeftModelForCausalLM, LoraConfig, get_peft_model
     from transformers import BitsAndBytesConfig
@@ -69,11 +68,11 @@ def lora_train(model_id, train_data, eval_data, lr, output, wandb=False, epochs=
     )
 
     model = get_peft_model(model, peft_config)
-    train(model, train_data, eval_data, lr, output, wandb, epochs)
-        
-def train(model, train_data, eval_data, lr, output, wandb=False, epochs=3):
-    
+    train(model, train_data, eval_data, lr, output, wandb, epochs, batch_size=3)
+
+def train(model, train_data, eval_data, lr, output, wandb=False, epochs=3, batch_size=3):
     if wandb:
+        import wandb
         print("Select a name for the wandb run:")
         run_name = input()
         wandb.init(name=run_name)
@@ -82,28 +81,29 @@ def train(model, train_data, eval_data, lr, output, wandb=False, epochs=3):
     eval_dataset = CLMDataset(eval_data)
     
     training_args = TrainingArguments(
-        report_to="wandb" if wandb else None, # enable logging to wandb
-        output_dir=output,                    # output directory
-        num_train_epochs=epochs,              # total number of training epochs
-        per_device_train_batch_size=3,        # batch size per device during training
-        per_device_eval_batch_size=3,         # batch size for evaluation
-        warmup_steps=500,                     # number of warmup steps for learning rate scheduler
-        weight_decay=0.01,                    # strength of weight decay
-        lr_scheduler_type='cosine',           # learning rate scheduler type
-        learning_rate=lr,                     # learning rate
-        logging_steps=10,                     # log every x updates
-        evaluation_strategy="steps",          # evaluate every eval_steps
-        eval_steps=50,                        # evaluation steps
-        # gradient_accumulation_steps=2,      # gradient accumulation steps
+        report_to="wandb" if wandb else None,   # enable logging to wandb
+        output_dir=output,                      # output directory
+        num_train_epochs=epochs,                # total number of training epochs
+        per_device_train_batch_size=batch_size, # batch size per device during training
+        per_device_eval_batch_size=batch_size,  # batch size for evaluation
+        warmup_steps=500,                       # number of warmup steps for learning rate scheduler
+        weight_decay=0.01,                      # strength of weight decay
+        lr_scheduler_type='cosine',             # learning rate scheduler type
+        learning_rate=lr,                       # learning rate
+        logging_steps=10,                       # log every x updates
+        evaluation_strategy="steps",            # evaluate every eval_steps
+        eval_steps=50,                          # evaluation steps
+        # gradient_accumulation_steps=2,        # gradient accumulation steps
     )
 
     trainer = SFTTrainer(
         model=model,
         args=training_args,
-        max_seq_length=2048,
+        max_seq_length=2048, 
         train_dataset=train_dataset,
         eval_dataset=eval_dataset,
         dataset_text_field='text',
+        # compute_metrics=compute_metrics
     )
     print(f"Training model with learning rate {lr}, output directory {output} and wandb logging set to {wandb}.")
     trainer.train()
@@ -120,6 +120,7 @@ if __name__ == '__main__':
     parser.add_argument('--epochs', type=int, default=3, help="The number of epochs to train for. Default is 3.")
     parser.add_argument('--lora', action='store_true', help="Whether to use LoRA for training. Default is False.")
     parser.add_argument('--wandb', action='store_true', help="Whether to use wandb for logging. Default is False.")
+    parser.add_argument('--batch_size', type=int, default=3, help="The batch size to use for training. Default is 3.")
     parser.set_defaults(lora=False, wandb=False)
 
     args = parser.parse_args()
@@ -133,11 +134,11 @@ if __name__ == '__main__':
         
     if args.model:
         if args.lora:
-            lora_train(args.model, train_data, eval_data, args.lr, args.output, args.wandb, args.epochs)
+            lora_train(args.model, train_data, eval_data, args.lr, args.output, args.wandb, args.epochs, args.batch_size)
         else:
             model = AutoModelForCausalLM.from_pretrained(args.model, torch_dtype=torch.bfloat16).to(device)
-            train(model, train_data, eval_data, args.lr, args.output, args.wandb, args.epochs)
+            train(model, train_data, eval_data, args.lr, args.output, args.wandb, args.epochs, args.batch_size)
     else:
         model = AutoModelForCausalLM.from_pretrained(DEFAULT_MODEL).to(device)
-        train(model, train_data, eval_data, args.lr, args.output, args.wandb, args.epochs)
+        train(model, train_data, eval_data, args.lr, args.output, args.wandb, args.epochs, args.batch_size)
 
