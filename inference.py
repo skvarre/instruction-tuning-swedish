@@ -16,6 +16,7 @@ import torch
 
 device = "cuda:0" if torch.cuda.is_available() else "cpu"
 
+
 #TODO: Hardcoded. Assumes bos_token = <s> and eos_token = <|endoftext|>.
 def parse_input(prompt, beginning_of_conversation):
     parsed_output = f"\n<s>User\n{prompt}\n<s>Bot\n"
@@ -30,7 +31,7 @@ def generate(model, tokenizer, prompt, max_length=200):
         do_sample=True,
         pad_token_id=tokenizer.pad_token_id
     )
-    
+
     output = tokenizer.decode(outputs[0], skip_special_tokens=False)
     # Stop at the first <s> token.
     return "".join(output.split('<s>')[0:3])
