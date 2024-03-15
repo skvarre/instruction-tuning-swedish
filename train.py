@@ -37,11 +37,20 @@ class CLMDataset(torch.utils.data.Dataset):
     
 
 #TODO: NOT DONE!
-def lora_train(model_id, train_data, eval_data, lr, output, wandb=False, epochs=3, batch_size=3):
+def lora_train(model_id, train_data, eval_data, lr, output, wandb_log=False, epochs=3, batch_size=3):
     # Only import these if LoRA is used
-    from peft import AutoPeftModelForCausalLM, LoraConfig, get_peft_model
+    from peft import AutoPeftModelForCausalLM, LoraConfig, get_peft_model, prepare_model_for_kbit_training
     from transformers import BitsAndBytesConfig
+    
+    if wandb_log:
+        import wandb
+        print("Select a name for the wandb run:")
+        run_name = input()
+        wandb.init(name=run_name)
 
+    train_dataset = CLMDataset(train_data)
+    eval_dataset = CLMDataset(eval_data)
+    
     quantization_config = BitsAndBytesConfig(
         load_in_4bit=True, # Load model in 4bit mode
         bnb_4bit_use_double_quantization=True, # Nested quantization 
@@ -54,7 +63,7 @@ def lora_train(model_id, train_data, eval_data, lr, output, wandb=False, epochs=
         quantization_config=quantization_config,
         use_cache=False,
         device_map="auto",
-        trust_remote_code=True
+        trust_remote_code=True,
     )
 
     model.config.pretraining_tp = 1
@@ -66,12 +75,46 @@ def lora_train(model_id, train_data, eval_data, lr, output, wandb=False, epochs=
         bias="none",
         task_type="causal_lm"
     )
+    model = prepare_model_for_kbit_training(model)
+
+
+    training_args = TrainingArguments(
+        report_to="wandb" if wandb_log else None,   # enable logging to wandb
+        output_dir=output,                      # output directory
+        num_train_epochs=epochs,                # total number of training epochs
+        per_device_train_batch_size=batch_size, # batch size per device during training
+        per_device_eval_batch_size=batch_size,  # batch size for evaluation
+        warmup_steps=500,                       # number of warmup steps for learning rate scheduler
+        weight_decay=0.01,                      # strength of weight decay
+        lr_scheduler_type='cosine',             # learning rate scheduler type
+        learning_rate=lr,                       # learning rate
+        logging_steps=10,                       # log every x updates
+        evaluation_strategy="steps",            # evaluate every eval_steps
+        eval_steps=100,                          # evaluation steps
+        # gradient_accumulation_steps=2,        # gradient accumulation steps
+        max_grad_norm=0.3,                      # max gradient norm
+    )
+
+    trainer = SFTTrainer(
+        model=model,
+        args=training_args,
+        peft_config=peft_config,
+        max_seq_length=2048, 
+        train_dataset=train_dataset,
+        eval_dataset=eval_dataset,
+        dataset_text_field='text',
+        # compute_metrics=compute_metrics
+    )
 
     model = get_peft_model(model, peft_config)
-    train(model, train_data, eval_data, lr, output, wandb, epochs, batch_size=3)
+    print("Model loaded with LoRA.")
+    trainer.train()
+    # Save model to disk
+    trainer.save_model()
 
-def train(model, train_data, eval_data, lr, output, wandb=False, epochs=3, batch_size=3):
-    if wandb:
+    # train(model, train_data, eval_data, lr, output, wandb, epochs, batch_size=3)
+def train(model, train_data, eval_data, lr, output, wandb_log=False, epochs=3, batch_size=3):
+    if wandb_log:
         import wandb
         print("Select a name for the wandb run:")
         run_name = input()
@@ -94,6 +137,7 @@ def train(model, train_data, eval_data, lr, output, wandb=False, epochs=3, batch
         evaluation_strategy="steps",            # evaluate every eval_steps
         eval_steps=50,                          # evaluation steps
         # gradient_accumulation_steps=2,        # gradient accumulation steps
+        max_grad_norm=0.3,                      # max gradient norm
     )
 
     trainer = SFTTrainer(
@@ -105,7 +149,7 @@ def train(model, train_data, eval_data, lr, output, wandb=False, epochs=3, batch
         dataset_text_field='text',
         # compute_metrics=compute_metrics
     )
-    print(f"Training model with learning rate {lr}, output directory {output} and wandb logging set to {wandb}.")
+    print(f"Training model with learning rate {lr}, output directory {output} and wandb logging set to {wandb_log}.")
     trainer.train()
     # Save model to disk
     trainer.save_model()
@@ -139,6 +183,6 @@ if __name__ == '__main__':
             model = AutoModelForCausalLM.from_pretrained(args.model, torch_dtype=torch.bfloat16).to(device)
             train(model, train_data, eval_data, args.lr, args.output, args.wandb, args.epochs, args.batch_size)
     else:
-        model = AutoModelForCausalLM.from_pretrained(DEFAULT_MODEL).to(device)
+        model = AutoModelForCausalLM.from_pretrained(DEFAULT_MODEL, torch_dtype=torch.bfloat16).to(device)
         train(model, train_data, eval_data, args.lr, args.output, args.wandb, args.epochs, args.batch_size)
 
