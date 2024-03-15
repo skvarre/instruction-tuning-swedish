@@ -92,7 +92,9 @@ def lora_train(model_id, train_data, eval_data, lr, output, wandb_log=False, epo
         evaluation_strategy="steps",            # evaluate every eval_steps
         eval_steps=100,                          # evaluation steps
         # gradient_accumulation_steps=2,        # gradient accumulation steps
-        max_grad_norm=0.3,                      # max gradient norm
+        max_grad_norm=0.3,                      # max gradient norm,
+        do_eval=True,
+        do_train=True,
     )
 
     trainer = SFTTrainer(

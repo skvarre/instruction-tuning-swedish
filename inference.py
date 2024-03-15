@@ -44,7 +44,7 @@ if __name__ == '__main__':
     model_path = args.model if args.model else "results"
     
     print("Loading model...")
-    model = AutoModelForCausalLM.from_pretrained(args.model).to(device)
+    model = AutoModelForCausalLM.from_pretrained(args.model, torch_dtype=torch.bfloat16).to(device)
     tokenizer = AutoTokenizer.from_pretrained(model_path)
     print(f"Model loaded on {"GPU" if device == "cuda:0" else "CPU"}.")
 
