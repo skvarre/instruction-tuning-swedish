@@ -31,7 +31,7 @@ def parse(text):
 def translate_json(path, output):
     with open (path, "r") as file:
         with open(output, "w") as out:
-            for _, line in enumerate(tqdm(file)):
+            for i, line in enumerate(tqdm(file)):
                 line = json.loads(line)
                 new_dict = {}
                 new_dict['instruction'] = parse(line['instruction'])
