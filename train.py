@@ -126,7 +126,7 @@ def train(model, train_data, eval_data, lr, output, wandb_log=False, epochs=3, b
     eval_dataset = CLMDataset(eval_data)
     
     training_args = TrainingArguments(
-        report_to="wandb" if wandb else None,   # enable logging to wandb
+        report_to="wandb" if wandb_log else None,   # enable logging to wandb
         output_dir=output,                      # output directory
         num_train_epochs=epochs,                # total number of training epochs
         per_device_train_batch_size=batch_size, # batch size per device during training
