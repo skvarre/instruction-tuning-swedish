@@ -2,7 +2,7 @@
 Instruction fine-tuning of a huggingface transformer model using next-step prediction on everything.   
 
 Usage:
-    python train.py [--model MODEL] [--data DATA] [--lr LR] [--output OUTPUT] [--epochs EPOCHS] [--lora] [--wandb]
+    python train.py [--model MODEL] [--data DATA] [--lr LR] [--output OUTPUT] [--epochs EPOCHS] [--lora] [--wandb] [--batch_size BATCH_SIZE]
 
     Use python train.py -h to see the full list of arguments and their descriptions.
 """
@@ -90,11 +90,12 @@ def lora_train(model_id, train_data, eval_data, lr, output, wandb_log=False, epo
         learning_rate=lr,                       # learning rate
         logging_steps=10,                       # log every x updates
         evaluation_strategy="steps",            # evaluate every eval_steps
-        eval_steps=100,                          # evaluation steps
+        eval_steps=50,                          # evaluation steps
         # gradient_accumulation_steps=2,        # gradient accumulation steps
         max_grad_norm=0.3,                      # max gradient norm,
         do_eval=True,
         do_train=True,
+        label_names=["labels"]                  # Needed for LoRA to compute evaluation loss. Idk why.
     )
 
     trainer = SFTTrainer(
