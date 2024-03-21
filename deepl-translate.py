@@ -6,9 +6,10 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-
 import time
 import random
+import os
+from dotenv import load_dotenv
 
 option = webdriver.ChromeOptions()
 driver = webdriver.Chrome(options = option)
@@ -51,7 +52,7 @@ def translate_text(text):
     input_field.send_keys(text)
     
     # LET IT COOK 
-    time.sleep(1)
+    # time.sleep(1)
 
     # Get the text from the output field
     output_field = driver.find_elements(By.CSS_SELECTOR, 'd-textarea.focus-visible-disabled-container')[1]
@@ -69,9 +70,10 @@ def generate_english_string(length):
     return english_string
 
 if __name__ == "__main__":
-    username = "skvaertill@hotmail.com"
-    password = "U4$wUD5r6]7YF\"x"
-    
+    load_dotenv()
+    username = os.environ.get("USERNAME")
+    password = os.environ.get("PASSWORD")
+
     login(username, password)
 
 
