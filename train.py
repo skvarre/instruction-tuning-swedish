@@ -57,7 +57,7 @@ def lora_train(model_id, train_data, eval_data, lr, output, wandb_log=False, epo
     
     # QLoRA
     quantization_config = BitsAndBytesConfig(
-        load_in_8bit=True,                     # Load model in 4bit mode
+        load_in_8bit=True,                     # Load model in 8-bit mode
         bnb_8bit_use_double_quantization=True, # Nested quantization 
         bnb_8bit_quant_type="nf4",             # Quantization algorithm to use 
         bnb_8bit_compute_dtype=torch.bfloat16  # data type of model after quantization

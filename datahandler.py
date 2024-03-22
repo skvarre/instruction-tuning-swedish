@@ -2,6 +2,9 @@
 Datahandler tokenizes raw data into instruction-tune format and saves it to file in train and eval split.
 Can also be used as a module to return tensors. 
 
+Mostly intended for use with AI-Sweden-Models. 
+Generalization is not guaranteed.
+
 Usage:
     If used natively. Run the following command in the terminal:
 
@@ -68,8 +71,8 @@ def handle_data(file):
     if __name__ == '__main__':
         train_filename = file.split('.')[0] + '_train' + '.pt'
         eval_filename = file.split('.')[0] + '_eval' + '.pt'
-        torch.save(padded_tensor, train_filename)
-        torch.save(padded_tensor, eval_filename)
+        torch.save(return_tensors[0], train_filename)
+        torch.save(return_tensors[1], eval_filename)
         print(f"Saved tokenized tensors to {train_filename} and {eval_filename}.")
     else:
         return return_tensors[0], return_tensors[1]
