@@ -12,6 +12,9 @@ import os
 from dotenv import load_dotenv
 
 option = webdriver.ChromeOptions()
+option.add_argument('--no-sandbox')
+option.add_argument('--headless')
+option.add_argument('--disable-dev-shm-usage')
 driver = webdriver.Chrome(options = option)
 
 driver.get('https://www.deepl.com/translator#en/sv/')
@@ -52,7 +55,7 @@ def translate_text(text):
     input_field.send_keys(text)
     
     # LET IT COOK 
-    # time.sleep(1)
+    time.sleep(1)
 
     # Get the text from the output field
     output_field = driver.find_elements(By.CSS_SELECTOR, 'd-textarea.focus-visible-disabled-container')[1]
@@ -71,16 +74,16 @@ def generate_english_string(length):
 
 if __name__ == "__main__":
     load_dotenv()
-    username = os.environ.get("USERNAME")
-    password = os.environ.get("PASSWORD")
+    username = os.environ.get("DEEPL_USERNAME")
+    password = os.environ.get("DEEPL_PASSWORD")
 
     login(username, password)
-
+    longer_string = "The evening light shimmers on the shore\nSoftly the waves echoes around and more \nAs I bask in the sun, my worries are all gone\nThe sound of seagulls I now foolishly ignore \nGlistening sand, beckons me with a silent plea \nGlistening seawater, cool to the touch and refreshingly free \nThe evening brings peace, yet I can't find any \nBut maybe in the morning there'll be time for me\nMy bottled peacefulness, I uncork and pour \nThe sound of the ocean, lulls me even more \nAnd for just a moment I close my eyes and behold \nThe vastness of the ocean, to my soul I now unfold."
 
     # Generate a string of english words in 5000 characters
     # english_string = generate_english_string(5000)
     # english_string = english_string[:5000]
 
     # translate_text(english_string)
-    translate_text("The Supreme Court is the highest court in the US.")
-
+    # translate_text("The Supreme Court is the highest court in the US.")
+    translate_text(longer_string)
