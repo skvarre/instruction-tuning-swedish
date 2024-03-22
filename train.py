@@ -6,17 +6,20 @@ Usage:
 
     Use python train.py -h to see the full list of arguments and their descriptions.
 """
-from transformers import AutoModelForCausalLM, default_data_collator, TrainingArguments, AutoTokenizer
+from transformers import AutoModelForCausalLM, default_data_collator, TrainingArguments, AutoTokenizer, EarlyStoppingCallback
 import argparse
 import torch
 from trl import SFTTrainer
 
+#Default setup. Should be removed in the future.
 DEFAULT_MODEL = "AI-Sweden-Models/gpt-sw3-126m"
+MAX_SEQ_LENGTH = 2048 # Max-seq length for gpt-sw3 models
+
 device = "cuda:0" if torch.cuda.is_available() else "cpu"
-tokenizer = AutoTokenizer.from_pretrained(DEFAULT_MODEL)
 
 #TODO: Build a class with next-step prediction on the last bot response.
-#Problem: Data is packed and does not keep track of indices. 
+# Problem: Data is packed and does not keep track of indices. 
+# Solution: Pack the data using the SFTTrainer class.
 
 class CLMDataset(torch.utils.data.Dataset):
     def __init__(self, input_ids):
@@ -36,12 +39,13 @@ class CLMDataset(torch.utils.data.Dataset):
         return self.input_ids.size(0)
     
 
-#TODO: NOT DONE!
 def lora_train(model_id, train_data, eval_data, lr, output, wandb_log=False, epochs=3, batch_size=3):
     # Only import these if LoRA is used
-    from peft import AutoPeftModelForCausalLM, LoraConfig, get_peft_model, prepare_model_for_kbit_training
+    from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training
     from transformers import BitsAndBytesConfig
-    
+
+    tokenizer = AutoTokenizer.from_pretrained(model_id)
+
     if wandb_log:
         import wandb
         print("Select a name for the wandb run:")
@@ -51,11 +55,12 @@ def lora_train(model_id, train_data, eval_data, lr, output, wandb_log=False, epo
     train_dataset = CLMDataset(train_data)
     eval_dataset = CLMDataset(eval_data)
     
+    # QLoRA
     quantization_config = BitsAndBytesConfig(
-        load_in_4bit=True, # Load model in 4bit mode
-        bnb_4bit_use_double_quantization=True, # Nested quantization 
-        bnb_4bit_quant_type="nf4", 
-        bnb_4bit_compute_dtype=torch.bfloat16
+        load_in_8bit=True,                     # Load model in 4bit mode
+        bnb_8bit_use_double_quantization=True, # Nested quantization 
+        bnb_8bit_quant_type="nf4",             # Quantization algorithm to use 
+        bnb_8bit_compute_dtype=torch.bfloat16  # data type of model after quantization
     )
 
     model = AutoModelForCausalLM.from_pretrained(
@@ -88,24 +93,27 @@ def lora_train(model_id, train_data, eval_data, lr, output, wandb_log=False, epo
         weight_decay=0.01,                      # strength of weight decay
         lr_scheduler_type='cosine',             # learning rate scheduler type
         learning_rate=lr,                       # learning rate
-        logging_steps=10,                       # log every x updates
+        logging_steps=1,                        # log every x updates
         evaluation_strategy="steps",            # evaluate every eval_steps
         eval_steps=50,                          # evaluation steps
         # gradient_accumulation_steps=2,        # gradient accumulation steps
         max_grad_norm=0.3,                      # max gradient norm,
         do_eval=True,
         do_train=True,
-        label_names=["labels"]                  # Needed for LoRA to compute evaluation loss. Idk why.
+        label_names=["labels"],                 # Needed for LoRA to compute evaluation loss. Idk why.
+        metric_for_best_model="eval_loss",      # Metric to use for early stopping
     )
 
     trainer = SFTTrainer(
         model=model,
         args=training_args,
         peft_config=peft_config,
-        max_seq_length=2048, 
+        max_seq_length=MAX_SEQ_LENGTH, 
         train_dataset=train_dataset,
         eval_dataset=eval_dataset,
+        tokenizer=tokenizer,
         dataset_text_field='text',
+        callbacks=[EarlyStoppingCallback(early_stopping_patience=3)], # Early stopping
         # compute_metrics=compute_metrics
     )
 
@@ -114,8 +122,8 @@ def lora_train(model_id, train_data, eval_data, lr, output, wandb_log=False, epo
     trainer.train()
     # Save model to disk
     trainer.save_model()
+    print("Model saved to disk.")
 
-    # train(model, train_data, eval_data, lr, output, wandb, epochs, batch_size=3)
 def train(model, train_data, eval_data, lr, output, wandb_log=False, epochs=3, batch_size=3):
     if wandb_log:
         import wandb

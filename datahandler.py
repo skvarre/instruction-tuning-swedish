@@ -74,7 +74,6 @@ def handle_data(file):
     else:
         return return_tensors[0], return_tensors[1]
 
-#TODO: FIX CONTENT MAPS TO USER 2 TIMES
 def tokenize(line : dict, bos_token : str, eos_token : str) -> torch.Tensor:
     """
     Tokenizes a single line of data into instruction format, in the manner given in the example below, and stores it in a tensor.
