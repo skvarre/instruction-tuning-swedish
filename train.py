@@ -46,6 +46,8 @@ def lora_train(model_id, train_data, eval_data, lr, output, wandb_log=False, epo
 
     tokenizer = AutoTokenizer.from_pretrained(model_id)
 
+    steps_per_epoch = len(train_data) // (batch_size * 3)
+
     if wandb_log:
         import wandb
         print("Select a name for the wandb run:")
@@ -57,10 +59,10 @@ def lora_train(model_id, train_data, eval_data, lr, output, wandb_log=False, epo
     
     # QLoRA
     quantization_config = BitsAndBytesConfig(
-        load_in_8bit=True,                     # Load model in 8-bit mode
-        bnb_8bit_use_double_quantization=True, # Nested quantization 
-        bnb_8bit_quant_type="nf4",             # Quantization algorithm to use 
-        bnb_8bit_compute_dtype=torch.bfloat16  # data type of model after quantization
+        load_in_4bit=True,                     # Load model in 4-bit mode
+        bnb_4bit_use_double_quantization=True, # Nested quantization 
+        bnb_4bit_quant_type="nf4",             # Quantization algorithm to use 
+        bnb_4bit_compute_dtype=torch.bfloat16  # data type of model after quantization
     )
 
     model = AutoModelForCausalLM.from_pretrained(
@@ -95,13 +97,16 @@ def lora_train(model_id, train_data, eval_data, lr, output, wandb_log=False, epo
         learning_rate=lr,                       # learning rate
         logging_steps=1,                        # log every x updates
         evaluation_strategy="steps",            # evaluate every eval_steps
-        eval_steps=50,                          # evaluation steps
-        # gradient_accumulation_steps=2,        # gradient accumulation steps
-        max_grad_norm=0.3,                      # max gradient norm,
+        eval_steps=steps_per_epoch//2,          # evaluation steps
+        gradient_accumulation_steps=3,          # gradient accumulation steps
+        max_grad_norm=1.0,                      # gradient clipping 
         do_eval=True,
         do_train=True,
         label_names=["labels"],                 # Needed for LoRA to compute evaluation loss. Idk why.
         metric_for_best_model="eval_loss",      # Metric to use for early stopping
+        load_best_model_at_end=True,            # Load best model at the end of training
+        save_steps=steps_per_epoch,             # Save model every eval_steps
+        save_total_limit=3,                     # Limit the number of saved models
     )
 
     trainer = SFTTrainer(
