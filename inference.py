@@ -38,15 +38,32 @@ def generate(model, tokenizer, prompt, max_length=200):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--model', type=str, default="results")
+    parser.add_argument('--model', type=str, default="models/results")
     parser.add_argument('--p', type=str, default='True')
-    parser.add_argument('--lora', action='store_true', help="Whether to use LoRA for inference. Default is False.")
+    parser.add_argument('--lora', action='store_true', help="Whether to use LoRA for inference. This assumes adapters as model argument. Default is False.")
+    parser.set_defaults(lora=False)
 
     args = parser.parse_args()
-    model_path = args.model if args.model else "results"
+
+    if args.lora:
+        from peft import AutoPeftModelForCausalLM
+        print("LoRA activated. Please provide base model.")
+        model_path = input()
+
+        print("Loading LoRA model with PEFT...")
+        model = AutoModelForCausalLM.from_pretrained(
+            model_path,
+            torch_dtype=torch.bfloat16,
+            load_in_4bit=True,
+            local_files_only=False
+        )
+
+        model.load_adapter(args.model)
+    else:
+        print("Loading model...")
+        model_path = args.model
+        model = AutoModelForCausalLM.from_pretrained(model_path, torch_dtype=torch.bfloat16).to(device)
     
-    print("Loading model...")
-    model = AutoModelForCausalLM.from_pretrained(args.model, torch_dtype=torch.bfloat16).to(device)
     tokenizer = AutoTokenizer.from_pretrained(model_path)
     print(f"Model loaded on {"GPU" if device == "cuda:0" else "CPU"}.")
 
