@@ -40,6 +40,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--model', type=str, default="results")
     parser.add_argument('--p', type=str, default='True')
+    parser.add_argument('--lora', action='store_true', help="Whether to use LoRA for inference. Default is False.")
+
     args = parser.parse_args()
     model_path = args.model if args.model else "results"
     
