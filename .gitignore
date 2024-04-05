@@ -169,3 +169,5 @@ results*/*
 *.sh
 
 models/*
+
+.scandeval_cache/*
