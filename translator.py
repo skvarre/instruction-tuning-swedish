@@ -76,31 +76,26 @@ def translate_json(path, output):
 Assumes OpenHermes format of datasets.
 """
 def translate_json_hermes(path, output):
+    latest_line = 10 #
     with open(path, "r") as file:
-        with open(output, "w") as out:
-            x = 0
-            for _, line in enumerate(tqdm(file)):
-                data = json.loads(line)
-                conv_list = data['conversations']
-                for conv in conv_list:
-                    conv['value'] = translate(conv['value'])
-                data['conversations'] = conv_list
-                json.dump(data, out)
-                out.write("\n")
-                out.flush()
-                x += 1
-                if x == 10:
-                    return 
-                
-                
-                    
+        lines = file.readlines()
+    
+    with open(output, "w" if latest_line == 0 else "a") as out:
+        for _, line in enumerate(tqdm(lines[latest_line:], initial=latest_line, total=len(lines[latest_line:]))):
+            data = json.loads(line)
+            conv_list = data['conversations']
+            for conv in conv_list:
+                conv['value'] = translate(conv['value'])
+            data['conversations'] = conv_list
+            json.dump(data, out)
+            out.write("\n")
+            out.flush()
                 
 
+translate_json_hermes("./OpenHermes-2.5-300k.jsonl", "./test.jsonl")
 
-# translate_json_hermes("./OpenHermes-2.5-300k.jsonl", "./test.jsonl")
-
-if __name__ == '__main__':
-    while True:
-        text = input("Enter text to translate: ")    
-        # text = """<2sv> Create a narrative for the following situation: Isak asks about the matter. Now Isak is told about the matter."""
-        print(translate(text))
+# if __name__ == '__main__':
+#     while True:
+#         text = input("Enter text to translate: ")    
+#         # text = """<2sv> Create a narrative for the following situation: Isak asks about the matter. Now Isak is told about the matter."""
+#         print(translate(text))
