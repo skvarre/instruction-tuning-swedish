@@ -171,3 +171,4 @@ results*/*
 models/*
 
 .scandeval_cache/*
+data_clean.ipynb

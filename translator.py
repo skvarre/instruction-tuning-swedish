@@ -1,11 +1,5 @@
 """
 Translate instruct-data from English to Swedish with GPT-SW3 inference. 
-
-ATTEMPT 1:
-Use madlad400-3B for translation.
-
-ATTEMPT 2:
-GPT-SW3-6.7b-translator
 """
 
 # from transformers import T5ForConditionalGeneration, T5Tokenizer
@@ -28,6 +22,10 @@ model = AutoModelForCausalLM.from_pretrained(model_name, device_map="auto", torc
 tokenizer = AutoTokenizer.from_pretrained(model_name)
 stop_on_token_criteria = StopOnTokenCriteria(stop_token_id=tokenizer.bos_token_id)
 
+"""
+Translate a single text from English to Swedish.
+Assumes GPT-SW3-6.7b-translator
+"""
 def translate(text):
         prompt = f"<|endoftext|><s>User: Översätt till Svenska från Engelska\n{text}<s>Bot:"
         input_ids = tokenizer(prompt, return_tensors="pt").input_ids.to(model.device)
@@ -40,13 +38,27 @@ def translate(text):
 
         return tokenizer.decode(outputs[0], skip_special_tokens=False).split("<s> Bot: ")[-1].split("<s>")[0]
 
-# Madlad is a bit weird, so we gotta clean new lines, and then insert them back
+"""
+Remove newlines, translates text, and appends the newlines back.
+
+Newlines has proven to be a problem with google/madlad-400-3b.
+"""
 def parse(text):
     lines = text.split("\n")
     # translate
     lines = [translate(line) for line in lines]
     return "\n".join([line.strip() for line in lines])
 
+"""
+Translate jsonl file with instruction data from English to Swedish.
+
+Assumes format:
+{
+    "instruction",
+    "input",
+    "output"
+}
+"""
 def translate_json(path, output):
     with open (path, "r") as file:
         with open(output, "w") as out:
@@ -60,10 +72,32 @@ def translate_json(path, output):
                 out.write("\n")
                 out.flush()
 
+"""
+Assumes OpenHermes format of datasets.
+"""
+def translate_json_hermes(path, output):
+    with open(path, "r") as file:
+        with open(output, "w") as out:
+            x = 0
+            for _, line in enumerate(tqdm(file)):
+                data = json.loads(line)
+                conv_list = data['conversations']
+                for conv in conv_list:
+                    conv['value'] = translate(conv['value'])
+                data['conversations'] = conv_list
+                json.dump(data, out)
+                out.write("\n")
+                out.flush()
+                x += 1
+                if x == 10:
+                    return 
+                
+                
+                    
+                
 
-# translate_json("./data/open-instruct-v1.jsonl", "open-instruct-v1-sv.jsonl")
 
-# translate("Create a narrative for the following situation: Isak asks about the matter. Now Isak is told about the matter.")
+# translate_json_hermes("./OpenHermes-2.5-300k.jsonl", "./test.jsonl")
 
 if __name__ == '__main__':
     while True:
