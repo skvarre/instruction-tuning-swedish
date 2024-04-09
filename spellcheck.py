@@ -1,5 +1,8 @@
 """
 TESTING OF SPELLCHECKER.
+
+Spellcheck the data based on a given threshold. 
+The threshold is the ratio of correctly spelled words to the total number of words in the example.
 """
 from spylls.hunspell import Dictionary
 import json

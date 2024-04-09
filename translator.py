@@ -72,11 +72,14 @@ def translate_json(path, output):
                 out.write("\n")
                 out.flush()
 
+def save_line(path, line):
+    with open(path, "w") as out:
+        json.dump(line, out)
 """
 Assumes OpenHermes format of datasets.
 """
 def translate_json_hermes(path, output):
-    latest_line = 10 #
+    latest_line = 3788 #
     with open(path, "r") as file:
         lines = file.readlines()
     
@@ -84,12 +87,27 @@ def translate_json_hermes(path, output):
         for _, line in enumerate(tqdm(lines[latest_line:], initial=latest_line, total=len(lines[latest_line:]))):
             data = json.loads(line)
             conv_list = data['conversations']
+            cnt = False
             for conv in conv_list:
-                conv['value'] = translate(conv['value'])
+                # Avoid translating if token length is too long before translation.
+                if len(tokenizer.encode((conv['value']))) <= 2048:
+                        try:
+                            conv['value'] = translate(conv['value']) 
+                        except ValueError as e:
+                            cnt = True
+                            break
+                else:
+                    cnt = True 
+                    break
+            if cnt: 
+                continue 
             data['conversations'] = conv_list
             json.dump(data, out)
             out.write("\n")
             out.flush()
+            latest_line += 1
+            if latest_line % 50 == 0:
+                save_line("line.jsonl", latest_line)
                 
 
 translate_json_hermes("./OpenHermes-2.5-300k.jsonl", "./test.jsonl")
