@@ -17,7 +17,7 @@ class StopOnTokenCriteria(StoppingCriteria):
         return input_ids[0, -1] == self.stop_token_id
 
 # Load pre-trained model and tokenizer
-model_name = '/mnt/pr_SharedNLU/users/tim_olsen/models/gpt-sw3-6.7b-v2-translator'
+model_name = '/tim_olsen/models/gpt-sw3-6.7b-v2-translator'
 model = AutoModelForCausalLM.from_pretrained(model_name, device_map="auto", torch_dtype=torch.bfloat16)
 tokenizer = AutoTokenizer.from_pretrained(model_name)
 stop_on_token_criteria = StopOnTokenCriteria(stop_token_id=tokenizer.bos_token_id)
@@ -79,7 +79,7 @@ def save_line(path, line):
 Assumes OpenHermes format of datasets.
 """
 def translate_json_hermes(path, output):
-    latest_line = 3788 #
+    latest_line = 28903 #
     with open(path, "r") as file:
         lines = file.readlines()
     
