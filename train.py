@@ -10,6 +10,7 @@ from transformers import AutoModelForCausalLM, default_data_collator, TrainingAr
 import argparse
 import torch
 from trl import SFTTrainer
+from math import sqrt
 
 #Default setup. Should be removed in the future.
 DEFAULT_MODEL = "AI-Sweden-Models/gpt-sw3-126m"
@@ -46,7 +47,7 @@ def lora_train(model_id, train_data, eval_data, lr, output, wandb_log=False, epo
 
     tokenizer = AutoTokenizer.from_pretrained(model_id)
 
-    steps_per_epoch = len(train_data) // (batch_size * 3)
+    steps_per_epoch = len(train_data) // (batch_size * 20)
 
     if wandb_log:
         import wandb
@@ -98,8 +99,8 @@ def lora_train(model_id, train_data, eval_data, lr, output, wandb_log=False, epo
         logging_steps=1,                        # log every x updates
         evaluation_strategy="steps",            # evaluate every eval_steps
         eval_steps=steps_per_epoch//2,          # evaluation steps
-        gradient_accumulation_steps=3,          # gradient accumulation steps
-        max_grad_norm=1.0,                      # gradient clipping 
+        gradient_accumulation_steps=20,          # gradient accumulation steps
+        max_grad_norm=1.0 * sqrt(20),                      # gradient clipping 
         do_eval=True,
         do_train=True,
         label_names=["labels"],                 # Needed for LoRA to compute evaluation loss. Idk why.
