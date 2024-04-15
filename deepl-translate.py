@@ -6,15 +6,18 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.keys import Keys
 import time
 import random
+from tqdm import tqdm 
+import json 
 import os
 from dotenv import load_dotenv
 
 option = webdriver.ChromeOptions()
-option.add_argument('--no-sandbox')
-option.add_argument('--headless')
-option.add_argument('--disable-dev-shm-usage')
+#option.add_argument('--no-sandbox')
+#option.add_argument('--headless')
+#option.add_argument('--disable-dev-shm-usage')
 driver = webdriver.Chrome(options = option)
 
 driver.get('https://www.deepl.com/translator#en/sv/')
@@ -48,14 +51,15 @@ def wait_for_text_to_be_present_in_element_value(driver, locator):
     return _predicate
 
 def translate_text(text):
+    # Make sure the field is empty
     # Get the text from the input field
     input_field = driver.find_elements(By.CSS_SELECTOR, 'd-textarea.focus-visible-disabled-container')[0]
-
     input_field.click()
+    input_field.send_keys(Keys.CONTROL + "a" + Keys.DELETE)
     input_field.send_keys(text)
     
     # LET IT COOK 
-    time.sleep(1)
+    time.sleep(3)
 
     # Get the text from the output field
     output_field = driver.find_elements(By.CSS_SELECTOR, 'd-textarea.focus-visible-disabled-container')[1]
@@ -65,12 +69,29 @@ def translate_text(text):
 
 
 
-    print(output_field.text)
+    #print(output_field.text)
+    return output_field.text
 
-def generate_english_string(length):
-    words = ['apple', 'banana', 'car', 'dog', 'elephant', 'flower', 'guitar', 'house', 'internet', 'jungle']
-    english_string = ' '.join(random.choices(words, k=length))
-    return english_string
+def json_hermes(path, output):
+    latest_line = 7 
+    with open(path, 'r') as file:
+        lines = file.readlines()
+
+    with open(output, "a") as out: 
+        for _, line in enumerate(tqdm(lines[latest_line:], initial=latest_line, total=len(lines))):
+            # try:
+            data = json.loads(line)
+            conv_list = data['conversations']
+            for conv in conv_list:
+                conv['value'] = translate_text(conv['value'])
+            # except:
+            #     print("Error")
+            #     continue
+            data['conversations'] = conv_list
+            json.dump(data, out)
+            out.write('\n')
+            out.flush()
+
 
 if __name__ == "__main__":
     load_dotenv()
@@ -78,7 +99,9 @@ if __name__ == "__main__":
     password = os.environ.get("DEEPL_PASSWORD")
 
     login(username, password)
-    longer_string = "The evening light shimmers on the shore\nSoftly the waves echoes around and more \nAs I bask in the sun, my worries are all gone\nThe sound of seagulls I now foolishly ignore \nGlistening sand, beckons me with a silent plea \nGlistening seawater, cool to the touch and refreshingly free \nThe evening brings peace, yet I can't find any \nBut maybe in the morning there'll be time for me\nMy bottled peacefulness, I uncork and pour \nThe sound of the ocean, lulls me even more \nAnd for just a moment I close my eyes and behold \nThe vastness of the ocean, to my soul I now unfold."
+    json_hermes("./OpenHermes-2.5-last100k.jsonl", "deepl-test.jsonl")
+    
+    # longer_string = "The evening light shimmers on the shore\nSoftly the waves echoes around and more \nAs I bask in the sun, my worries are all gone\nThe sound of seagulls I now foolishly ignore \nGlistening sand, beckons me with a silent plea \nGlistening seawater, cool to the touch and refreshingly free \nThe evening brings peace, yet I can't find any \nBut maybe in the morning there'll be time for me\nMy bottled peacefulness, I uncork and pour \nThe sound of the ocean, lulls me even more \nAnd for just a moment I close my eyes and behold \nThe vastness of the ocean, to my soul I now unfold."
 
     # Generate a string of english words in 5000 characters
     # english_string = generate_english_string(5000)
@@ -86,4 +109,5 @@ if __name__ == "__main__":
 
     # translate_text(english_string)
     # translate_text("The Supreme Court is the highest court in the US.")
-    translate_text(longer_string)
+    # translate_text(longer_string)
+
