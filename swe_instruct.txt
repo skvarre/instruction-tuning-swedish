@@ -26,7 +26,7 @@ The format should be in JSONL like this:
 Generate some questions in swedish about the province of Västergötland, make it at least 10 examples. 
 
 
-- Famous people from Sweden
+- Famous people from Sweden:
 - Examples not possible to answer as an AI assistant
 - Mathematics
 - Ways to learn a new language
@@ -34,8 +34,6 @@ Generate some questions in swedish about the province of Västergötland, make i
 - Swedish books
 - Swedish music:
 - Swedish food:
-    - Traditional swedish food
-    - Modern cuisine 
 - Swedish grammar
 - Swedish spelling
 - Swedish language 
@@ -47,46 +45,19 @@ Generate some questions in swedish about the province of Västergötland, make i
 - Swedish economy
 - Swedish technology
 - Swedish cities:
-    - Stockholm
-    - Gothenburg
-    - Malmö
-    - Uppsala
-    - Linköping
 - Swedish provinces:
-    - Ångermanland
-    - Blekinge
-    - Bohuslän
-    - Dalarna
-    - Dalsland
-    - Gästrikland
-    - Gotland
-    - Halland
-    - Hälsingland
-    - Härjedalen
-    - Jämtland
-    - Lappland
-    - Medelpad
-    - Närke
-    - Norrbotten
-    - Öland
-    - Östergötland
-    - Skåne
-    - Småland
-    - Södermanland
-    - Uppland
-    - Värmland
-    - Västerbotten
-    - Västergötland
-    - Västmanland    
 - Religion in Sweden 
 - Swedish companies:
-    - Private companies
-    - Government-owned companies 
 - General knowledge (Allmänbildning) 
-- Neighboring countries:
-    - Norway
-    - Denmark
-    - Finland
+- Swedish education:
+- Swedish authorities
+- Neighboring countries
+- Swedish transportation
+- Sports in Sweden
+- Swedish fashion
+- Swedish art
+- Swedish TV-shows
+- Swedish accents & dialects
 
 - Sundsvall
 - Luleå 
@@ -96,27 +67,11 @@ Generate some questions in swedish about the province of Västergötland, make i
 - Helsingborg
 - Jönköping
 
-- Swedish education:
-    - Pre-school 
-    - Lågstadiet/Mellanstadiet/Högstadiet 
-    - Gymnasiet
-    - Högskola/Universitet 
-    - Folkhögskola
-    - Komvux 
-- Swedish transportation
-- Sports in Sweden:
-    - Ball sports
-    - Winter sports
-    - Olympic events
-    - Famous sports events in Sweden
-
 - Swedish minorities
 - Sami culture
 - "Sverigefinnar"
 - Swedish newspapers
-- Swedish fashion
 - Swedish design
-- Swedish art
 - Swedish literature
 - Swedish philosophy
 - Swedish religion
@@ -127,7 +82,6 @@ Generate some questions in swedish about the province of Västergötland, make i
 - Swedish celebrations
 - Swedish customs
 - Swedish etiquette
-- Swedish accents & dialects
 - Swedish vocabulary
 - Swedish pronunciation
 - Swedish punctuation

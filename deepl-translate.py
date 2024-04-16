@@ -1,6 +1,8 @@
 
 """
 Translate from English to Swedish using DeepL UI
+
+Not gonna be efficient or viable, just fun to test it out. 
 """
 from selenium import webdriver
 from selenium.webdriver.common.by import By
