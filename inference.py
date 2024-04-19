@@ -75,7 +75,6 @@ if __name__ == '__main__':
     tokenizer = AutoTokenizer.from_pretrained(model_path)
     print(f"Model loaded on {"GPU" if device == "cuda:0" else "CPU"}.")
 
-    beginning_of_conversation = True # Not sure this is needed. 
     while True:
         print("Type prompt or press ENTER to exit:")
         prompt = input()
@@ -86,4 +85,3 @@ if __name__ == '__main__':
         else:
             parsed_prompt = parse_input(prompt)
             print(generate(model, tokenizer, parsed_prompt))
-            beginning_of_conversation = False
