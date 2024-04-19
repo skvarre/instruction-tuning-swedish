@@ -18,10 +18,10 @@ device = "cuda:0" if torch.cuda.is_available() else "cpu"
 
 
 #TODO: Hardcoded. Assumes bos_token = <s> and eos_token = <|endoftext|>.
-def parse_input(prompt, beginning_of_conversation):
-    parsed_output = f"\n<s>User\n{prompt}\n<s>Bot\n"
-    return f"<|endoftext|>{parsed_output}" if beginning_of_conversation else parsed_output
-    # return f"<|endoftext|>\n<s>User\n{prompt}\n<s>Bot"
+def parse_input(prompt):
+    # parsed_output = f"\n<s>User\n{prompt}\n<s>Bot\n"
+    # return f"<|endoftext|>{parsed_output}" if beginning_of_conversation else parsed_output
+    return f"<|endoftext|>\n<s>User\n{prompt}\n<s>Bot\n"
 
 def generate(model, tokenizer, prompt, max_length=200):    
     inputs = tokenizer.encode(prompt, return_tensors="pt").to(device)
@@ -39,7 +39,6 @@ def generate(model, tokenizer, prompt, max_length=200):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--model', type=str, default="models/results")
-    parser.add_argument('--p', type=str, default='True')
     parser.add_argument('--lora', action='store_true', help="Whether to use LoRA for inference. This assumes adapters as model argument. Default is False.")
     parser.set_defaults(lora=False)
 
@@ -47,6 +46,14 @@ if __name__ == '__main__':
 
     if args.lora:
         from peft import AutoPeftModelForCausalLM
+        from transformers import BitsAndBytesConfig
+        quantization_config = BitsAndBytesConfig(
+            load_in_4bit=True,                     # Load model in 4-bit mode
+            bnb_4bit_use_double_quantization=True, # Nested quantization 
+            bnb_4bit_quant_type="nf4",             # Quantization algorithm to use 
+            bnb_4bit_compute_dtype=torch.bfloat16  # data type of model after quantization
+        )      
+
         print("LoRA activated. Please provide base model.")
         model_path = input()
 
@@ -54,7 +61,8 @@ if __name__ == '__main__':
         model = AutoModelForCausalLM.from_pretrained(
             model_path,
             torch_dtype=torch.bfloat16,
-            load_in_4bit=True,
+            quantization_config=quantization_config,
+            low_cpu_mem_usage=True,
             local_files_only=False
         )
 
@@ -76,6 +84,6 @@ if __name__ == '__main__':
             print("Exiting...")
             exit(0)
         else:
-            parsed_prompt = parse_input(prompt, beginning_of_conversation) if args.p == 'True' else prompt
+            parsed_prompt = parse_input(prompt)
             print(generate(model, tokenizer, parsed_prompt))
             beginning_of_conversation = False
