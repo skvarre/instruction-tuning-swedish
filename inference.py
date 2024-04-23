@@ -10,7 +10,8 @@ Usage:
         Whether to parse the input prompt into a format that the model can understand. Default is True.
 """
 
-from transformers import AutoModelForCausalLM, AutoTokenizer
+from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
+from peft import AutoPeftModelForCausalLM
 import argparse
 import torch 
 
@@ -45,8 +46,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     if args.lora:
-        from peft import AutoPeftModelForCausalLM
-        from transformers import BitsAndBytesConfig
+
         quantization_config = BitsAndBytesConfig(
             load_in_4bit=True,                     # Load model in 4-bit mode
             bnb_4bit_use_double_quantization=True, # Nested quantization 
@@ -70,7 +70,13 @@ if __name__ == '__main__':
     else:
         print("Loading model...")
         model_path = args.model
-        model = AutoModelForCausalLM.from_pretrained(model_path, torch_dtype=torch.bfloat16).to(device)
+        quantization_config = BitsAndBytesConfig(
+            load_in_4bit=True,                     # Load model in 4-bit mode
+            bnb_4bit_use_double_quantization=True, # Nested quantization 
+            bnb_4bit_quant_type="nf4",             # Quantization algorithm to use 
+            bnb_4bit_compute_dtype=torch.bfloat16  # data type of model after quantization
+        )    
+        model = AutoModelForCausalLM.from_pretrained(model_path, quantization_config=quantization_config, torch_dtype=torch.bfloat16)
     
     tokenizer = AutoTokenizer.from_pretrained(model_path)
     print(f"Model loaded on {"GPU" if device == "cuda:0" else "CPU"}.")
