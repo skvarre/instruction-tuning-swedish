@@ -13,21 +13,22 @@ How to think about prompting:
 You are to generate instruction-tuning data in Swedish. The questions and answers should be as elaborate as possible.
 Not every question has to be formulated as an actual question with a question mark, it can also be formulated as a statement or a prompt - be creative.
 
-Add some more diversity to how the questions are started, for example questions starting with "Varför" or "När" or "Jag" or "Vilken" or "Hur" or "Kan" or "Gör". Point is; keep it diverse,
-think about formulating them in a diverse number of ways so that there are a lot of different formats. 
+Also think about adding some diversity to how the questions are started, for example questions starting with "Varför" or "När" or "Jag" or "Vilken" or "Hur" or "Kan" or "Gör", or "Jag har en fråga", or "Jag har ett problem", or "Fråga:", or "Jag vet inte..", or "Jämför", or "Hjälp mig" , or "Är det", or "Är", or "Nu". Point is; keep it diverse, think about formulating them in a diverse number of ways so that there are a lot of different formats. Also, the prompting can be more than just questions, it can be prompts to list something in a specific order, or something like that. 
 
 If you want to add new lines in the questions or the answers, then add \n in strings, but don't actually create a new line. 
 However, this not have to occur in every example, or even any, but do it where it seems necessary.
 
-The format should be in JSONL like this:
+The format should be in JSONL format like this:
 
 {"text":[{"<human>":"question"},{"<bot>":"answer"}]}
 
-Generate some questions in swedish about the province of Västergötland, make it at least 10 examples. 
+Let's start. Generate 20 examples in swedish about pronounciation of swedish words
+
 
 
 - Famous people from Sweden:
 - Examples not possible to answer as an AI assistant
+- Unethical questions that an AI Assistant shouldn't help with
 - Mathematics
 - Ways to learn a new language
 - Swedish movies
@@ -58,32 +59,26 @@ Generate some questions in swedish about the province of Västergötland, make i
 - Swedish art
 - Swedish TV-shows
 - Swedish accents & dialects
+- Swedish news sources
+- Swedish mythology & folklore
+- Swedish holidays & celebrations 
+- Pronunciation of swedish words 
 
-- Sundsvall
-- Luleå 
-- Västerås
-- Örebro
-- Linköping
-- Helsingborg
-- Jönköping
+
+- Swedish welfare
+- Swedish consumer behaviors
+- Swedish legal system 
+
+- Swedish nature reservers and national parks
 
 - Swedish minorities
 - Sami culture
 - "Sverigefinnar"
-- Swedish newspapers
 - Swedish design
 - Swedish literature
 - Swedish philosophy
-- Swedish religion
-- Swedish mythology
-- Swedish folklore
-- Swedish traditions
-- Swedish holidays
-- Swedish celebrations
-- Swedish customs
 - Swedish etiquette
 - Swedish vocabulary
-- Swedish pronunciation
 - Swedish punctuation
 - Swedish writing
 - Swedish reading
@@ -95,12 +90,5 @@ Generate some questions in swedish about the province of Västergötland, make i
 - Swedish translation
 - Swedish interpretation
 - Swedish transcription
-- Swedish subtitles
 - Swedish voiceover
 - Swedish dubbing
-- Swedish localization
-- Swedish transcription
-- Swedish proofreading
-- Swedish editing
-- Swedish copywriting
-- Swedish content writing
