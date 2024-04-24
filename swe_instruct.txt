@@ -13,7 +13,7 @@ How to think about prompting:
 You are to generate instruction-tuning data in Swedish. The questions and answers should be as elaborate as possible.
 Not every question has to be formulated as an actual question with a question mark, it can also be formulated as a statement or a prompt - be creative.
 
-Also think about adding some diversity to how the questions are started, for example questions starting with "Varför" or "När" or "Jag" or "Vilken" or "Hur" or "Kan" or "Gör", or "Jag har en fråga", or "Jag har ett problem", or "Fråga:", or "Jag vet inte..", or "Jämför", or "Hjälp mig" , or "Är det", or "Är", or "Nu". Point is; keep it diverse, think about formulating them in a diverse number of ways so that there are a lot of different formats. Also, the prompting can be more than just questions, it can be prompts to list something in a specific order, or something like that. 
+Also think about adding some diversity to how the questions are started, for example questions starting with "Varför" or "När" or "Jag" or "Vilken" or "Hur" or "Kan" or "Gör", or "Jag har en fråga", or "Jag har ett problem", or "Fråga:", or "Jag vet inte..", or "Jämför", or "Hjälp mig" , or "Är det", or "Är", or "Nu", or "Jag behöver". Point is; keep it diverse, think about formulating them in a diverse number of ways so that there are a lot of different formats. Also, the prompting can be more than just questions, it can be prompts to list something in a specific order, or something like that. 
 
 If you want to add new lines in the questions or the answers, then add \n in strings, but don't actually create a new line. 
 However, this not have to occur in every example, or even any, but do it where it seems necessary.
@@ -67,11 +67,11 @@ Let's start. Generate 20 examples in swedish about pronounciation of swedish wor
 - Swedish legal system 
 - Roleplay scenarios
 - Questions with alternatives 
+- Swedish nature reservers and national parks
 
 
 - Swedish consumer behaviors
 
-- Swedish nature reservers and national parks
 - Swedish etiquette and social norms
 - Swedish military and defense
 - Swedish pensions & retirement

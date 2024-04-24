@@ -98,7 +98,7 @@ def lora_train(model_id, train_data, eval_data, lr, output, wandb_log=False, epo
         learning_rate=lr,                       # learning rate
         logging_steps=1,                        # log every x updates
         evaluation_strategy="steps",            # evaluate every eval_steps
-        eval_steps=steps_per_epoch//2,          # evaluation steps
+        eval_steps=steps_per_epoch//4,          # evaluation steps
         gradient_accumulation_steps=20,          # gradient accumulation steps
         max_grad_norm=1.0 * sqrt(20),                      # gradient clipping 
         do_eval=True,
@@ -176,7 +176,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--model', type=str, default=DEFAULT_MODEL, help="The name of (or path to) the HuggingFace transformer model to use for training. Default is 'AI-Sweden-Models/gpt-sw3-126m'.")
     parser.add_argument('--data', type=str, help="The name of train and eval data to use for training, without adding '_train.pt' or '_eval.pt' as this is already assumed.")
-    parser.add_argument('--lr', type=float, default=1e-4, help="The learning rate to use for training. Default is 1e-4.")
+    parser.add_argument('--lr', type=float, default=1e-6, help="The learning rate to use for training. Default is 1e-6.")
     parser.add_argument('--output', type=str, default="./results", help="The directory to save the trained model to. Default is './results'.")
     parser.add_argument('--epochs', type=int, default=3, help="The number of epochs to train for. Default is 3.")
     parser.add_argument('--lora', action='store_true', help="Whether to use LoRA for training. Default is False.")
