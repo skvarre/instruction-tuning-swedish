@@ -175,3 +175,5 @@ data_clean.ipynb
 datasets/*
 lilac.yml
 qlora-*
+eval.ipynb
+gpt-sw3-*
