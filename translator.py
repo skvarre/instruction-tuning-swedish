@@ -108,9 +108,34 @@ def translate_json_hermes(path, output):
             latest_line += 1
             if latest_line % 50 == 0:
                 save_line("line.jsonl", latest_line)
+
+def translate_sv_en(path, output):
+    latest_line = 53 #
+    with open(path, "r") as file:
+        lines = file.readlines()
+    
+    with open(output, "w" if latest_line == 0 else "a") as out:
+        for _, line in enumerate(tqdm(lines[latest_line:], initial=latest_line, total=len(lines[latest_line:]))):
+            data = json.loads(line)
+            conv_list = data['conversations']
+            dct = {
+                "en":"", 
+                "sv":"",
+            }
+            for conv in conv_list:
+                # Avoid translating if token length is too long before translation.
+                if len(tokenizer.encode((conv['value']))) <= 2048:
+                    try:
+                        dct['sv'] = translate(conv['value'])
+                        dct['en'] = conv['value']
+                        out.write("\n")
+                        out.flush()
+                        json.dump(dct, out)
+                    except ValueError as e:
+                        break
                 
 
-translate_json_hermes("./bad.jsonl", "./bad-svensk.jsonl")
+translate_sv_en("./OpenHermes-2.5-300k.jsonl", "./examples-en-sv.jsonl")
 
 # if __name__ == '__main__':
 #     while True:

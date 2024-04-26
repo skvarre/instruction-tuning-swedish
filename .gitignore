@@ -177,3 +177,4 @@ lilac.yml
 qlora-*
 eval.ipynb
 gpt-sw3-*
+notebooks/*
