@@ -164,8 +164,7 @@ cython_debug/
 *.json
 *.pt
 results*/*
-/wandb/*
-/translation_models/*
+/wandb/
 *.sh
 
 models/*
@@ -177,4 +176,4 @@ lilac.yml
 qlora-*
 eval.ipynb
 gpt-sw3-*
-notebooks/*
+/notebooks/
