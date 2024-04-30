@@ -23,6 +23,7 @@ option = webdriver.ChromeOptions()
 driver = webdriver.Chrome(options = option)
 
 driver.get('https://www.deepl.com/translator#en/sv/')
+# driver.get('https://www.deepl.com/en/login')
 
 def login(username, password):
     time.sleep(1)
@@ -61,7 +62,7 @@ def translate_text(text):
     input_field.send_keys(text)
     
     # LET IT COOK 
-    time.sleep(3)
+    time.sleep(5)
 
     # Get the text from the output field
     output_field = driver.find_elements(By.CSS_SELECTOR, 'd-textarea.focus-visible-disabled-container')[1]
@@ -94,6 +95,22 @@ def json_hermes(path, output):
             out.write('\n')
             out.flush()
 
+def translate_for_model(path, output):
+    latest_line = 27
+    with open(path, 'r') as file:
+        lines = file.readlines()
+
+    with open(output, "a") as out: 
+        for _, line in enumerate(tqdm(lines[latest_line:], initial=latest_line, total=len(lines))):
+            # try:
+            data = json.loads(line)
+            data['sv'] = translate_text(data['en'])
+            # except:
+            #     print("Error")
+            #     continue
+            json.dump(data, out)
+            out.write('\n')
+            out.flush()
 
 if __name__ == "__main__":
     load_dotenv()
@@ -101,7 +118,7 @@ if __name__ == "__main__":
     password = os.environ.get("DEEPL_PASSWORD")
 
     login(username, password)
-    json_hermes("./OpenHermes-2.5-last100k.jsonl", "deepl-test.jsonl")
+    translate_for_model("./bad-examples-en-sv.jsonl", "corrected-examples-en-sv.jsonl")
     
     # longer_string = "The evening light shimmers on the shore\nSoftly the waves echoes around and more \nAs I bask in the sun, my worries are all gone\nThe sound of seagulls I now foolishly ignore \nGlistening sand, beckons me with a silent plea \nGlistening seawater, cool to the touch and refreshingly free \nThe evening brings peace, yet I can't find any \nBut maybe in the morning there'll be time for me\nMy bottled peacefulness, I uncork and pour \nThe sound of the ocean, lulls me even more \nAnd for just a moment I close my eyes and behold \nThe vastness of the ocean, to my soul I now unfold."
 
