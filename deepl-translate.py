@@ -96,7 +96,7 @@ def json_hermes(path, output):
             out.flush()
 
 def translate_for_model(path, output):
-    latest_line = 27
+    latest_line = 0
     with open(path, 'r') as file:
         lines = file.readlines()
 
