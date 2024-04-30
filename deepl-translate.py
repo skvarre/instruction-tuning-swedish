@@ -75,28 +75,28 @@ def translate_text(text):
     #print(output_field.text)
     return output_field.text
 
-def json_hermes(path, output):
-    latest_line = 7 
+def translate_json(path, output):
+    latest_line = 0
     with open(path, 'r') as file:
         lines = file.readlines()
 
     with open(output, "a") as out: 
         for _, line in enumerate(tqdm(lines[latest_line:], initial=latest_line, total=len(lines))):
-            # try:
-            data = json.loads(line)
-            conv_list = data['conversations']
-            for conv in conv_list:
-                conv['value'] = translate_text(conv['value'])
-            # except:
-            #     print("Error")
-            #     continue
+            try:
+                data = json.loads(line)
+                conv_list = data['conversations']
+                for conv in conv_list:
+                    conv['value'] = translate_text(conv['value'])
+            except:
+                print("Error")
+                continue
             data['conversations'] = conv_list
             json.dump(data, out)
             out.write('\n')
             out.flush()
 
 def translate_for_model(path, output):
-    latest_line = 0
+    latest_line = 27
     with open(path, 'r') as file:
         lines = file.readlines()
 
@@ -118,7 +118,7 @@ if __name__ == "__main__":
     password = os.environ.get("DEEPL_PASSWORD")
 
     login(username, password)
-    translate_for_model("./bad-examples-en-sv.jsonl", "corrected-examples-en-sv.jsonl")
+    translate_json("./bad-examples-en-sv.jsonl", "corrected-examples-en-sv.jsonl")
     
     # longer_string = "The evening light shimmers on the shore\nSoftly the waves echoes around and more \nAs I bask in the sun, my worries are all gone\nThe sound of seagulls I now foolishly ignore \nGlistening sand, beckons me with a silent plea \nGlistening seawater, cool to the touch and refreshingly free \nThe evening brings peace, yet I can't find any \nBut maybe in the morning there'll be time for me\nMy bottled peacefulness, I uncork and pour \nThe sound of the ocean, lulls me even more \nAnd for just a moment I close my eyes and behold \nThe vastness of the ocean, to my soul I now unfold."
 
