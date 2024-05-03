@@ -70,8 +70,6 @@ def translate_text(text):
     # WebDriverWait(driver, 1000).until(wait_for_text_to_be_present_in_element_value(driver, output_field))
     # Wait for the output field to be populated
 
-
-
     #print(output_field.text)
     return output_field.text
 

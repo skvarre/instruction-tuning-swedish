@@ -3,7 +3,7 @@ Translate instruct-data from English to Swedish with GPT-SW3 inference.
 """
 
 # from transformers import T5ForConditionalGeneration, T5Tokenizer
-from transformers import AutoTokenizer, AutoModelForCausalLM, StoppingCriteria, StoppingCriteriaList
+from transformers import AutoTokenizer, AutoModelForCausalLM, StoppingCriteria, StoppingCriteriaList, pipeline
 import torch
 import json
 from tqdm import tqdm
@@ -17,10 +17,17 @@ class StopOnTokenCriteria(StoppingCriteria):
         return input_ids[0, -1] == self.stop_token_id
 
 # Load pre-trained model and tokenizer
+device = "cuda" if torch.cuda.is_available() else "cpu"
 model_name = '../models/gpt-sw3-6.7b-v2-translator'
-model = AutoModelForCausalLM.from_pretrained(model_name, device_map="auto", torch_dtype=torch.bfloat16)
-tokenizer = AutoTokenizer.from_pretrained(model_name)
-stop_on_token_criteria = StopOnTokenCriteria(stop_token_id=tokenizer.bos_token_id)
+# model = AutoModelForCausalLM.from_pretrained(model_name, device_map="auto", torch_dtype=torch.bfloat16)
+# tokenizer = AutoTokenizer.from_pretrained(model_name)
+pipe = pipeline(
+    task="text-generation",
+    model = '../models/gpt-sw3-6.7b-v2-translator',
+    device=device,
+    torch_dtype=torch.bfloat16
+)
+stop_on_token_criteria = StopOnTokenCriteria(stop_token_id=pipe.tokenizer.bos_token_id)
 
 """
 Translate a single text from English to Swedish.
@@ -28,15 +35,16 @@ Assumes GPT-SW3-6.7b-translator
 """
 def translate(text):
         prompt = f"<|endoftext|><s>User: Översätt till Svenska från Engelska\n{text}<s>Bot:"
-        input_ids = tokenizer(prompt, return_tensors="pt").input_ids.to(model.device)
-        outputs = model.generate(
-            input_ids=input_ids,
-            max_length=2048,
+        input_ids = pipe.tokenizer(prompt, return_tensors="pt").input_ids.to(device)
+        dynamic_max_length = 2048 - input_ids.shape[1]
+        outputs = pipe(
+            prompt,
+            max_length=dynamic_max_length,
             # temperature=0.3,
-            do_sample=False,
+            truncation=True,
             stopping_criteria=StoppingCriteriaList([stop_on_token_criteria]))
 
-        return tokenizer.decode(outputs[0], skip_special_tokens=False).split("<s> Bot: ")[-1].split("<s>")[0]
+        return outputs[0]['generated_text'].split("<s>Bot: ")[-1]
 
 """
 Remove newlines, translates text, and appends the newlines back.
@@ -76,10 +84,10 @@ def save_line(path, line):
     with open(path, "w") as out:
         json.dump(line, out)
 """
-Assumes OpenHermes format of datasets.
+Assumes Conversational format of dataset.
 """
-def translate_json_hermes(path, output):
-    latest_line = 0 #
+def translate_json(path, output, keep_original=False):
+    latest_line = 5443 #
     with open(path, "r") as file:
         lines = file.readlines()
     
@@ -89,10 +97,17 @@ def translate_json_hermes(path, output):
             conv_list = data['conversations']
             cnt = False
             for conv in conv_list:
+                if keep_original:
+                    new_conv = []
                 # Avoid translating if token length is too long before translation.
-                if len(tokenizer.encode((conv['value']))) <= 2048:
+                if len(pipe.tokenizer.encode((conv['value']))) <= 2048:
                         try:
-                            conv['value'] = translate(conv['value']) 
+                            if keep_original:
+                                new_conv.append(conv['value'])
+                                new_conv.append(translate(conv['value']))
+                                conv['value'] = new_conv
+                            else:
+                                conv['value'] = translate(conv['value']) 
                         except ValueError as e:
                             cnt = True
                             break
@@ -101,13 +116,10 @@ def translate_json_hermes(path, output):
                     break
             if cnt: 
                 continue 
-            data['conversations'] = conv_list
+            data['conversations'] = conv_list 
             json.dump(data, out)
             out.write("\n")
             out.flush()
-            latest_line += 1
-            if latest_line % 50 == 0:
-                save_line("line.jsonl", latest_line)
 
 def translate_sv_en(path, output):
     latest_line = 53 #
@@ -124,7 +136,7 @@ def translate_sv_en(path, output):
             }
             for conv in conv_list:
                 # Avoid translating if token length is too long before translation.
-                if len(tokenizer.encode((conv['value']))) <= 2048:
+                if len(pipe.tokenizer.encode((conv['value']))) <= 2048:
                     try:
                         dct['sv'] = translate(conv['value'])
                         dct['en'] = conv['value']
@@ -135,7 +147,7 @@ def translate_sv_en(path, output):
                         break
                 
 
-translate_sv_en("./OpenHermes-2.5-300k.jsonl", "./examples-en-sv.jsonl")
+translate_json("./data/SlimOrca-cleaned.jsonl", "./data/SlimOrca-sv.jsonl", keep_original=True)
 
 # if __name__ == '__main__':
 #     while True:
