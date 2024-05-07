@@ -51,10 +51,10 @@ def formatting_prompts(examples):
 def train(model_id, dataset, output, split, wandb_log=False, q_lora=True):
     gradient_accumulation_steps = 20
 
-    steps_per_epoch = len(dataset) // (batch_size * gradient_accumulation_steps)
 
     dataset = dataset['train'].train_test_split(test_size=split)
     dataset = dataset.map(formatting_prompts, batched=True,)
+    steps_per_epoch = len(dataset['train']) // (batch_size * gradient_accumulation_steps)
     
     if wandb_log:
         print("Select a name for the wandb run:")
@@ -101,6 +101,7 @@ def train(model_id, dataset, output, split, wandb_log=False, q_lora=True):
     training_args = TrainingArguments(
         report_to="wandb" if wandb_log else None,
         output_dir=output,
+        num_train_epochs=epochs,
         per_device_train_batch_size=batch_size,
         per_device_eval_batch_size=batch_size,
         gradient_accumulation_steps=gradient_accumulation_steps,
@@ -111,11 +112,13 @@ def train(model_id, dataset, output, split, wandb_log=False, q_lora=True):
         eval_steps=steps_per_epoch//4,
         evaluation_strategy="steps",
         do_eval=True,
+        do_train=True,
         max_grad_norm=1.0 * sqrt(gradient_accumulation_steps),
         optim=optimizer,
         fp16 = not BF16_SUPPORT,
         bf16 = BF16_SUPPORT,
         logging_steps=1,
+        label_names=["labels"],
         metric_for_best_model="eval_loss",
         save_steps=steps_per_epoch,
         save_total_limit=3,        
@@ -129,6 +132,7 @@ def train(model_id, dataset, output, split, wandb_log=False, q_lora=True):
         train_dataset=dataset['train'],
         eval_dataset=dataset['test'],
         dataset_text_field='text',
+        packing=False
     )
 
     trainer.train() 
