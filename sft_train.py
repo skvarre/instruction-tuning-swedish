@@ -4,7 +4,6 @@ the SFTTrainer class handle the preprocessing part, without relying on datahandl
 """
 import argparse
 from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig, TrainingArguments
-from datasets import load_dataset
 from trl import SFTTrainer
 import torch 
 from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training
@@ -27,15 +26,10 @@ weight_decay = 0.01
 optimizer = "adamw_8bit"
 use_gradient_checkpointing = True
 """LoRA hyperparameters"""
-lora_alpha = 16
+lora_alpha = 32
 lora_dropout = 0.1
-lora_rank = 64
+lora_rank = 128
 
-def prompt_with_system(row, eos_token, bos_token):
-    pass
-
-def prompt_wtihout_system(eos_token, bos_token):
-    pass
 
 """Format the prompts, assumes standard conversational turns"""
 def formatting_prompts(examples):
@@ -48,12 +42,20 @@ def formatting_prompts(examples):
         texts.append(text)
     return {"text": texts}
 
+"""Format prompts for translation task."""
+def formatting_translation(examples):
+    prompt_pairs = [
+        f"<s>User: Översätt till Svenska från Engelska\n{en}<s>Bot: {sv}<s>"
+        for en, sv in zip(examples["en"], examples["sv"])
+    ]
+    return {"text": prompt_pairs}
+
 def train(model_id, dataset, output, split, wandb_log=False, q_lora=True):
     gradient_accumulation_steps = 20
 
 
     dataset = dataset['train'].train_test_split(test_size=split)
-    dataset = dataset.map(formatting_prompts, batched=True,)
+    dataset = dataset.map(formatting_translation, batched=True,)
     steps_per_epoch = len(dataset['train']) // (batch_size * gradient_accumulation_steps)
     
     if wandb_log:
@@ -137,8 +139,6 @@ def train(model_id, dataset, output, split, wandb_log=False, q_lora=True):
 
     trainer.train() 
 
-    
-    
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Train a model with SFT.')
     parser.add_argument('--model', type=str, default="AI-Sweden-Models/gpt-sw3-126m", help='Model to use for training.')
@@ -149,12 +149,19 @@ if __name__ == '__main__':
     parser.add_argument('--dataset', type=str, help='Dataset to use.')
     parser.add_argument('--wandb', action='store_true', help="Whether to use wandb for logging. Default is False.")
     parser.add_argument('--split', type=float, default=0.2, help='Train-test split ratio.')
+    parser.add_argument('--hf', action='store_true', help="Whether to use HuggingFace dataset.")
     parser.set_defaults(wandb=False)
+    parser.set_defaults(hf=False)
     args = parser.parse_args()
 
     if args.dataset:
         try: 
-            dataset = load_dataset(args.dataset)
+            if args.hf:
+                dataset = load_dataset(args.dataset)
+            else:
+                # Running local dataset. 
+                dataset = load_dataset('json', data_files=args.dataset)   
+                dataset = dataset.shuffle()             
         except:
             print("Dataset not found, please check dataset name.")
             exit()

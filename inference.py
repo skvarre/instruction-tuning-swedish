@@ -25,7 +25,8 @@ class StopOnTokenCriteria(StoppingCriteria):
     def __call__(self, input_ids, scores, **kwargs):
         return input_ids[0, -1] == self.stop_token_id
 
-
+def parse_translation(prompt):
+    return f"<|endoftext|><s>User: Översätt till Svenska från Engelska\n{prompt}<s>Bot:"
 
 #TODO: Hardcoded. Assumes bos_token = <s> and eos_token = <|endoftext|>.
 def parse_input(system_prompt, prompt):
@@ -35,6 +36,20 @@ def parse_input(system_prompt, prompt):
         return f"<|endoftext|><s>\nSYSTEM\n{system_prompt}\n\n<s>USER:\n{prompt}\n<s>ASSISTANT:\n"
     else:
         return f"<|endoftext|><s>\nUSER:\n{prompt}\n<s>ASSISTANT:\n"
+    
+def generate_translation(model, tokenizer, prompt):
+    inputs = tokenizer.encode(prompt, return_tensors="pt").to(device)
+    dynamic_max_length = MAX_LENGTH - inputs.shape[1]
+    outputs = model.generate(
+        inputs,
+        max_length=dynamic_max_length,
+        do_sample=True,
+        pad_token_id=tokenizer.pad_token_id,
+        stopping_criteria=StoppingCriteriaList([stop_on_token_criteria])
+    )
+
+    output = tokenizer.decode(outputs[0], skip_special_tokens=False)
+    return output.split('<s>Bot: ')[-1]
 
 def generate(model, tokenizer, prompt):    
     inputs = tokenizer.encode(prompt, return_tensors="pt").to(device)
@@ -56,12 +71,15 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--model', type=str, default="models/results")
     parser.add_argument('--lora', action='store_true', help="Whether to use LoRA for inference. This assumes adapters as model argument. Default is False.")
+    parser.add_argument('--translate', action='store_true', help="For inference on gpt-sw3-translator")
+
     parser.set_defaults(lora=False)
+    parser.set_defaults(translate=False)
+
 
     args = parser.parse_args()
     
     if args.lora:
-
         quantization_config = BitsAndBytesConfig(
             load_in_4bit=True,                     # Load model in 4-bit mode
             bnb_4bit_use_double_quantization=True, # Nested quantization 
@@ -91,8 +109,8 @@ if __name__ == '__main__':
             bnb_4bit_quant_type="nf4",             # Quantization algorithm to use 
             bnb_4bit_compute_dtype=torch.bfloat16  # data type of model after quantization
         )    
-        model = AutoModelForCausalLM.from_pretrained(model_path, quantization_config=quantization_config, torch_dtype=torch.bfloat16)
-    
+        model = AutoModelForCausalLM.from_pretrained(model_path, quantization_config=None, torch_dtype=torch.bfloat16).to(device)
+
     tokenizer = AutoTokenizer.from_pretrained(model_path)
     stop_on_token_criteria = StopOnTokenCriteria(stop_token_id=tokenizer.bos_token_id)
 
@@ -118,9 +136,13 @@ if __name__ == '__main__':
             print("Exiting...")
             exit(0)
         elif prompt.lower() == "sys":
-            print("Enter system prompt:")
+            print("Enter system prompt: (Leave blank to skip system prompt)\nCurrent system prompt is: ", system_prompt if system_prompt else "[None]")
             system_prompt = input()
             parsed_prompt = parse_input(system_prompt, prompt)
         else:
-            parsed_prompt = parse_input(system_prompt, prompt)
-            print(generate(model, tokenizer, parsed_prompt))
+            if args.translate:
+                parsed_prompt = parse_translation(prompt)
+                print(generate_translation(model, tokenizer, parsed_prompt))
+            else:
+                parsed_prompt = parse_input(system_prompt, prompt)
+                print(generate(model, tokenizer, parsed_prompt))
