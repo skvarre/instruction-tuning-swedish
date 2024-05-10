@@ -26,9 +26,10 @@ weight_decay = 0.01
 optimizer = "adamw_8bit"
 use_gradient_checkpointing = True
 """LoRA hyperparameters"""
-lora_alpha = 32
+q_lora = True # Set to false for full finetune without quantization
+lora_alpha = 16
 lora_dropout = 0.1
-lora_rank = 128
+lora_rank = 64
 
 
 """Format the prompts, assumes standard conversational turns"""
@@ -45,13 +46,13 @@ def formatting_prompts(examples):
 """Format prompts for translation task."""
 def formatting_translation(examples):
     prompt_pairs = [
-        f"<s>User: Översätt till Svenska från Engelska\n{en}<s>Bot: {sv}<s>"
+        f"<|endoftext|><s>User: Översätt till Svenska från Engelska\n{en}<s>Bot: {sv}<s>"
         for en, sv in zip(examples["en"], examples["sv"])
     ]
     return {"text": prompt_pairs}
 
-def train(model_id, dataset, output, split, wandb_log=False, q_lora=True):
-    gradient_accumulation_steps = 20
+def train(model_id, dataset, output, split, wandb_log=False):
+    gradient_accumulation_steps = 8
 
 
     dataset = dataset['train'].train_test_split(test_size=split)
