@@ -16,7 +16,7 @@ BF16_SUPPORT = torch.cuda.is_bf16_supported()
 DTYPE = torch.bfloat16 if BF16_SUPPORT else torch.float16
 
 """Hyperparameters for fine-tuning"""
-gradient_accumulation_steps = 20
+gradient_accumulation_steps = 8
 learning_rate = 5e-5
 batch_size = 8
 epochs = 3
@@ -27,9 +27,9 @@ optimizer = "adamw_8bit"
 use_gradient_checkpointing = True
 """LoRA hyperparameters"""
 q_lora = True # Set to false for full finetune without quantization
-lora_alpha = 16
+lora_alpha = 64
 lora_dropout = 0.1
-lora_rank = 64
+lora_rank = 128
 
 
 """Format the prompts, assumes standard conversational turns"""
@@ -52,8 +52,6 @@ def formatting_translation(examples):
     return {"text": prompt_pairs}
 
 def train(model_id, dataset, output, split, wandb_log=False):
-    gradient_accumulation_steps = 8
-
 
     dataset = dataset['train'].train_test_split(test_size=split)
     dataset = dataset.map(formatting_translation, batched=True,)

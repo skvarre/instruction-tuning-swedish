@@ -19,43 +19,43 @@ class StopOnTokenCriteria(StoppingCriteria):
 
 # Load pre-trained model and tokenizer
 device = "cuda" if torch.cuda.is_available() else "cpu"
-model_name = '../models/madlad400-10b-mt'
+model_name = './gpt-sw3-6.7b-v2-translator-5/'
 # processor = AutoProcessor.from_pretrained(model_name)
 # model = SeamlessM4TModel.from_pretrained(model_name)
-model = T5ForConditionalGeneration.from_pretrained(model_name, device_map="auto", torch_dtype=torch.bfloat16)
-tokenizer = T5Tokenizer.from_pretrained(model_name)
+# model = T5ForConditionalGeneration.from_pretrained(model_name, device_map="auto", torch_dtype=torch.bfloat16)
+# tokenizer = T5Tokenizer.from_pretrained(model_name)
 # model = AutoModelForCausalLM.from_pretrained(model_name, device_map="auto", torch_dtype=torch.bfloat16)
 # tokenizer = AutoTokenizer.from_pretrained(model_name)
-# pipe = pipeline(
-#     task="text-generation",
-#     model = '../models/gpt-sw3-6.7b-v2-translator',
-#     device=device,
-#     torch_dtype=torch.bfloat16
-# )
-# stop_on_token_criteria = StopOnTokenCriteria(stop_token_id=pipe.tokenizer.bos_token_id)
+pipe = pipeline(
+    task="text-generation",
+    model = model_name,
+    device=device,
+    torch_dtype=torch.bfloat16
+)
+stop_on_token_criteria = StopOnTokenCriteria(stop_token_id=pipe.tokenizer.bos_token_id)
 
 """
 Translate a single text from English to Swedish.
 Assumes GPT-SW3-6.7b-translator
 """
-# def translate(text):
-#         prompt = f"<|endoftext|><s>User: Översätt till Svenska från Engelska\n{text}<s>Bot:"
-#         input_ids = pipe.tokenizer(prompt, return_tensors="pt").input_ids.to(device)
-#         dynamic_max_length = 2048 - input_ids.shape[1]
-#         outputs = pipe(
-#             prompt,
-#             max_length=dynamic_max_length,
-#             # temperature=0.3,
-#             truncation=True,
-#             stopping_criteria=StoppingCriteriaList([stop_on_token_criteria]))
-
-#         return outputs[0]['generated_text'].split("<s>Bot: ")[-1]
-
 def translate(text):
-    input_ids = tokenizer(f"<2sv> {text}", return_tensors="pt").input_ids.to(model.device)
-    outputs = model.generate(input_ids=input_ids, max_length=128)
+        prompt = f"<|endoftext|><s>User: Översätt till Svenska från Engelska\n{text}<s>Bot:"
+        input_ids = pipe.tokenizer(prompt, return_tensors="pt").input_ids.to(device)
+        dynamic_max_length = 2048 - input_ids.shape[1]
+        outputs = pipe(
+            prompt,
+            max_length=dynamic_max_length,
+            # temperature=0.3,
+            truncation=True,
+            stopping_criteria=StoppingCriteriaList([stop_on_token_criteria]))
 
-    return tokenizer.decode(outputs[0], skip_special_tokens=True)
+        return outputs[0]['generated_text'].split("<s>Bot: ")[-1]
+
+# def translate(text):
+#     input_ids = tokenizer(f"<2sv> {text}", return_tensors="pt").input_ids.to(model.device)
+#     outputs = model.generate(input_ids=input_ids, max_length=128)
+
+#     return tokenizer.decode(outputs[0], skip_special_tokens=True)
 
 
 """
@@ -112,14 +112,14 @@ def translate_json(path, output, keep_original=False):
                 if keep_original:
                     new_conv = []
                 # Avoid translating if token length is too long before translation.
-                # if len(tokenizer.encode((conv['value']))) <= 2048:
+                if len(pipe.tokenizer.encode((conv['value']))) <= 2048:
                     try:
                         if keep_original:
                             new_conv.append(conv['value'])
-                            new_conv.append(parse(conv['value']))
+                            new_conv.append(translate(conv['value']))
                             conv['value'] = new_conv
                         else:
-                            conv['value'] = parse(conv['value']) 
+                            conv['value'] = translate(conv['value']) 
                     except ValueError as e:
                         cnt = True
                         break
@@ -148,7 +148,7 @@ def translate_sv_en(path, output):
             }
             for conv in conv_list:
                 # Avoid translating if token length is too long before translation.
-                if len(tokenizer.encode((conv['value']))) <= 2048:
+                if len(pipe.tokenizer.encode((conv['value']))) <= 2048:
                     try:
                         dct['sv'] = translate(conv['value'])
                         dct['en'] = conv['value']
@@ -159,7 +159,7 @@ def translate_sv_en(path, output):
                         break
                 
 
-translate_json("./data/SlimOrca-cleaned.jsonl", "./data/SlimOrca-sv-madlad.jsonl", keep_original=True)
+translate_json("./data/SlimOrca-cleaned.jsonl", "./data/SlimOrca-sv-v2.jsonl", keep_original=True)
 
 # if __name__ == '__main__':
 #     while True:
