@@ -30,7 +30,8 @@ pipe = pipeline(
     task="text-generation",
     model = model_name,
     device=device,
-    torch_dtype=torch.bfloat16
+    torch_dtype=torch.bfloat16,
+    batch_size=8
 )
 stop_on_token_criteria = StopOnTokenCriteria(stop_token_id=pipe.tokenizer.bos_token_id)
 
@@ -79,7 +80,7 @@ Assumes format:
     "output"
 }
 """
-def translate_json(path, output):
+def translate_json_instruct(path, output):
     with open (path, "r") as file:
         with open(output, "w") as out:
             for i, line in enumerate(tqdm(file)):
@@ -95,39 +96,40 @@ def translate_json(path, output):
 def save_line(path, line):
     with open(path, "w") as out:
         json.dump(line, out)
+
+def process_data(conv_list, keep_original=False):
+    for conv in conv_list:
+        if keep_original:
+            new_conv = []
+        # Avoid translating if token length is too long before translation.
+        if len(pipe.tokenizer.encode((conv['value']))) <= 2048:
+            try:
+                if keep_original:
+                    new_conv.append(conv['value'])
+                    new_conv.append(translate(conv['value']))
+                    conv['value'] = new_conv
+                else:
+                    conv['value'] = translate(conv['value']) 
+            except ValueError as e:
+                return None
+        else:
+            return None
+    return conv_list
+
 """
 Assumes Conversational format of dataset.
 """
 def translate_json(path, output, keep_original=False):
-    latest_line = 0 #
+    latest_line = 49 #
     with open(path, "r") as file:
         lines = file.readlines()
     
     with open(output, "w" if latest_line == 0 else "a") as out:
         for _, line in enumerate(tqdm(lines[latest_line:], initial=latest_line, total=len(lines[latest_line:]))):
             data = json.loads(line)
-            conv_list = data['conversations']
-            cnt = False
-            for conv in conv_list:
-                if keep_original:
-                    new_conv = []
-                # Avoid translating if token length is too long before translation.
-                if len(pipe.tokenizer.encode((conv['value']))) <= 2048:
-                    try:
-                        if keep_original:
-                            new_conv.append(conv['value'])
-                            new_conv.append(translate(conv['value']))
-                            conv['value'] = new_conv
-                        else:
-                            conv['value'] = translate(conv['value']) 
-                    except ValueError as e:
-                        cnt = True
-                        break
-                else:
-                    cnt = True 
-                    break
-            if cnt: 
-                continue 
+            conv_list = process_data(data['conversations'], keep_original=keep_original)
+            if conv_list is None:
+                continue
             data['conversations'] = conv_list 
             json.dump(data, out)
             out.write("\n")
@@ -159,7 +161,7 @@ def translate_sv_en(path, output):
                         break
                 
 
-translate_json("./data/SlimOrca-cleaned.jsonl", "./data/SlimOrca-sv-v2.jsonl", keep_original=True)
+translate_json("./data/Pure-Dove-cleaned.jsonl", "./data/Pure-Dove-SV.jsonl", keep_original=True)
 
 # if __name__ == '__main__':
 #     while True:
