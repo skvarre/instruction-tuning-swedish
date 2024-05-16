@@ -18,8 +18,8 @@ def len_difference(original_text, translated_text, threshold):
 
 
 if __name__ == "__main__":
-    path = "./data/SlimOrca-sv-v2.jsonl"
-    output = "./data/SlimOrca-sv-v2-37k.jsonl"
+    path = "./data/Pure-Dove-SV-2.jsonl"
+    output = "./data/Pure-Dove-SV-3.jsonl"
 
     with open(path, "r") as file:
         lines = file.readlines()

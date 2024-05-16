@@ -16,7 +16,7 @@ BF16_SUPPORT = torch.cuda.is_bf16_supported()
 DTYPE = torch.bfloat16 if BF16_SUPPORT else torch.float16
 
 """Hyperparameters for fine-tuning"""
-gradient_accumulation_steps = 8
+gradient_accumulation_steps = 20
 learning_rate = 5e-5
 batch_size = 8
 epochs = 3
@@ -54,7 +54,7 @@ def formatting_translation(examples):
 def train(model_id, dataset, output, split, wandb_log=False):
 
     dataset = dataset['train'].train_test_split(test_size=split)
-    dataset = dataset.map(formatting_translation, batched=True,)
+    dataset = dataset.map(formatting_prompts, batched=True,)
     steps_per_epoch = len(dataset['train']) // (batch_size * gradient_accumulation_steps)
     
     if wandb_log:
