@@ -120,7 +120,7 @@ def process_data(conv_list, keep_original=False):
 Assumes Conversational format of dataset.
 """
 def translate_json(path, output, keep_original=False):
-    latest_line = 49 #
+    latest_line = 40000 #
     with open(path, "r") as file:
         lines = file.readlines()
     

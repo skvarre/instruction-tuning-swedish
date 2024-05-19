@@ -16,8 +16,8 @@ BF16_SUPPORT = torch.cuda.is_bf16_supported()
 DTYPE = torch.bfloat16 if BF16_SUPPORT else torch.float16
 
 """Hyperparameters for fine-tuning"""
-gradient_accumulation_steps = 20
-learning_rate = 5e-5
+gradient_accumulation_steps = 25
+learning_rate = 2e-4
 batch_size = 8
 epochs = 3
 lr_scheduler_type = "cosine"
@@ -27,9 +27,9 @@ optimizer = "adamw_8bit"
 use_gradient_checkpointing = True
 """LoRA hyperparameters"""
 q_lora = True # Set to false for full finetune without quantization
-lora_alpha = 64
-lora_dropout = 0.1
-lora_rank = 128
+lora_alpha = 16
+lora_dropout = 0
+lora_rank = 64
 
 
 """Format the prompts, assumes standard conversational turns"""
@@ -90,7 +90,7 @@ def train(model_id, dataset, output, split, wandb_log=False):
         lora_dropout=lora_dropout,
         r=lora_rank,               
         bias="none",
-        task_type="causal_lm"
+        task_type="causal_lm",
     )
 
     model = prepare_model_for_kbit_training(
