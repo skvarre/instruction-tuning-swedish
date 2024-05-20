@@ -16,12 +16,12 @@ BF16_SUPPORT = torch.cuda.is_bf16_supported()
 DTYPE = torch.bfloat16 if BF16_SUPPORT else torch.float16
 
 """Hyperparameters for fine-tuning"""
-gradient_accumulation_steps = 25
+gradient_accumulation_steps = 8
 learning_rate = 2e-4
 batch_size = 8
 epochs = 3
 lr_scheduler_type = "cosine"
-warmup_steps = 500
+warmup_steps = 100
 weight_decay = 0.01
 optimizer = "adamw_8bit"
 use_gradient_checkpointing = True
@@ -30,6 +30,14 @@ q_lora = True # Set to false for full finetune without quantization
 lora_alpha = 16
 lora_dropout = 0
 lora_rank = 64
+
+# For logging to wandb 
+if q_lora:
+    lora_hyperparams = {
+        'lora_alpha': lora_alpha,
+        'lora_dropout': lora_dropout,
+        'lora_rank': lora_rank
+    }
 
 
 """Format the prompts, assumes standard conversational turns"""
@@ -54,7 +62,7 @@ def formatting_translation(examples):
 def train(model_id, dataset, output, split, wandb_log=False):
 
     dataset = dataset['train'].train_test_split(test_size=split)
-    dataset = dataset.map(formatting_prompts, batched=True,)
+    dataset = dataset.map(formatting_translation, batched=True,)
     steps_per_epoch = len(dataset['train']) // (batch_size * gradient_accumulation_steps)
     
     if wandb_log:
@@ -63,6 +71,7 @@ def train(model_id, dataset, output, split, wandb_log=False):
         print("Select project to store run in. Leave blank for default.")
         project_name = input()
         wandb.init(name=run_name, project=project_name if project_name != "" else None)
+        wandb.config.update(lora_hyperparams)
     
     bnb_config = BitsAndBytesConfig(
         load_in_4bit=True,
