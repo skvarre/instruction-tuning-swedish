@@ -24,8 +24,8 @@ def dot_diff(original_text, translated_text):
 
 
 if __name__ == "__main__":
-    path = "./data/Pure-Dove-SV-2.jsonl"
-    output = "./data/Pure-Dove-SV-3.jsonl"
+    path = "./data/SlimOrca-sv-CONTINUE-2.jsonl"
+    output = "./data/SlimOrca-sv-CONTINUE-3.jsonl"
 
     with open(path, "r") as file:
         lines = file.readlines()
@@ -36,7 +36,7 @@ if __name__ == "__main__":
             conv_list = data['conversations']
             skip = False
             for conv in conv_list:
-                if (line_diff(conv['value'][0], conv['value'][1])):
+                if (dot_diff(conv['value'][0], conv['value'][1])):
                     skip = True
                     break 
             if skip:

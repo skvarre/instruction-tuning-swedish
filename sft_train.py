@@ -25,9 +25,10 @@ warmup_steps = 250
 weight_decay = 0.01
 optimizer = "adamw_8bit"
 use_gradient_checkpointing = True
+use_flash_attention = True 
 """LoRA hyperparameters"""
-q_lora = False # Set to false for full finetune without quantization
-lora_alpha = 64
+q_lora = True # Set to false for full finetune without quantization
+lora_alpha = 256
 lora_dropout = 0
 lora_rank = 128
 
@@ -74,10 +75,10 @@ def train(model_id, dataset, output, split, wandb_log=False):
             wandb.config.update(lora_hyperparams)
     
     bnb_config = BitsAndBytesConfig(
-        load_in_4bit=True,
-        bnb_4bit_use_double_quantization=True,
-        bnb_4bit_quant_type="nf4",
-        bnb_4bit_compute_dtype=DTYPE
+        load_in_8bit=True,
+        bnb_8bit_use_double_quantization=True,
+        bnb_8bit_quant_type="nf4",
+        bnb_8bit_compute_dtype=DTYPE
     )
 
     model = AutoModelForCausalLM.from_pretrained(
@@ -86,7 +87,8 @@ def train(model_id, dataset, output, split, wandb_log=False):
         torch_dtype = DTYPE,
         quantization_config = bnb_config if q_lora else None,
         token = None,
-        trust_remote_code=True
+        trust_remote_code=True,
+        attn_implementation= "flash_attention_2" if use_flash_attention else None
     )
 
     tokenizer = AutoTokenizer.from_pretrained(

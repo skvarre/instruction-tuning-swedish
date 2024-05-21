@@ -120,7 +120,7 @@ def process_data(conv_list, keep_original=False):
 Assumes Conversational format of dataset.
 """
 def translate_json(path, output, keep_original=False):
-    latest_line = 0 #
+    latest_line = 40000 #
     with open(path, "r") as file:
         lines = file.readlines()
     
@@ -161,7 +161,7 @@ def translate_sv_en(path, output):
                         break
                 
 
-translate_json("./data/CamelAI-7k.jsonl", "./data/CamelAI-7k-sv", keep_original=True)
+translate_json("./data/SlimOrca-cleaned.jsonl", "./data/SlimOrca-sv-CONTINUE.jsonl", keep_original=True)
 
 # if __name__ == '__main__':
 #     while True:
