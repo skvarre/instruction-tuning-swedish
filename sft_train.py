@@ -21,15 +21,15 @@ learning_rate = 2e-4
 batch_size = 8
 epochs = 3
 lr_scheduler_type = "cosine"
-warmup_steps = 100
+warmup_steps = 250
 weight_decay = 0.01
 optimizer = "adamw_8bit"
 use_gradient_checkpointing = True
 """LoRA hyperparameters"""
-q_lora = True # Set to false for full finetune without quantization
-lora_alpha = 16
+q_lora = False # Set to false for full finetune without quantization
+lora_alpha = 64
 lora_dropout = 0
-lora_rank = 64
+lora_rank = 128
 
 # For logging to wandb 
 if q_lora:
@@ -38,7 +38,6 @@ if q_lora:
         'lora_dropout': lora_dropout,
         'lora_rank': lora_rank
     }
-
 
 """Format the prompts, assumes standard conversational turns"""
 def formatting_prompts(examples):
@@ -62,7 +61,7 @@ def formatting_translation(examples):
 def train(model_id, dataset, output, split, wandb_log=False):
 
     dataset = dataset['train'].train_test_split(test_size=split)
-    dataset = dataset.map(formatting_translation, batched=True,)
+    dataset = dataset.map(formatting_prompts, batched=True,)
     steps_per_epoch = len(dataset['train']) // (batch_size * gradient_accumulation_steps)
     
     if wandb_log:
@@ -71,7 +70,8 @@ def train(model_id, dataset, output, split, wandb_log=False):
         print("Select project to store run in. Leave blank for default.")
         project_name = input()
         wandb.init(name=run_name, project=project_name if project_name != "" else None)
-        wandb.config.update(lora_hyperparams)
+        if q_lora:
+            wandb.config.update(lora_hyperparams)
     
     bnb_config = BitsAndBytesConfig(
         load_in_4bit=True,

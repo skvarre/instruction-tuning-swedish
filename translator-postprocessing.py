@@ -16,6 +16,12 @@ def len_difference(original_text, translated_text, threshold):
     translated_text = translated_text.split()
     return abs(len(original_text) - len(translated_text)) >= threshold
 
+"""Heuristic: Remove examples that differ in amount of dots between the original and translated text."""
+def dot_diff(original_text, translated_text):
+    original_text = original_text.count(".")
+    translated_text = translated_text.count(".")
+    return original_text != translated_text
+
 
 if __name__ == "__main__":
     path = "./data/Pure-Dove-SV-2.jsonl"

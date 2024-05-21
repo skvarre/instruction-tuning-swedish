@@ -19,7 +19,7 @@ class StopOnTokenCriteria(StoppingCriteria):
 
 # Load pre-trained model and tokenizer
 device = "cuda" if torch.cuda.is_available() else "cpu"
-model_name = './gpt-sw3-6.7b-v2-translator-5/'
+model_name = './merged-models/gpt-sw3-6.7b-v2-translator-5/'
 # processor = AutoProcessor.from_pretrained(model_name)
 # model = SeamlessM4TModel.from_pretrained(model_name)
 # model = T5ForConditionalGeneration.from_pretrained(model_name, device_map="auto", torch_dtype=torch.bfloat16)
@@ -120,7 +120,7 @@ def process_data(conv_list, keep_original=False):
 Assumes Conversational format of dataset.
 """
 def translate_json(path, output, keep_original=False):
-    latest_line = 40000 #
+    latest_line = 0 #
     with open(path, "r") as file:
         lines = file.readlines()
     
@@ -161,7 +161,7 @@ def translate_sv_en(path, output):
                         break
                 
 
-translate_json("./data/Pure-Dove-cleaned.jsonl", "./data/Pure-Dove-SV.jsonl", keep_original=True)
+translate_json("./data/CamelAI-7k.jsonl", "./data/CamelAI-7k-sv", keep_original=True)
 
 # if __name__ == '__main__':
 #     while True:
