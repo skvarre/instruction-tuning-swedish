@@ -65,14 +65,19 @@ def generate(model, tokenizer, prompt):
     output = tokenizer.decode(outputs[0], skip_special_tokens=False)
     # Stop at the first <s> token.
     # return "".join(output.split('<s> ASSISTANT:'))
-    return output.split('<s>')[-2]
+    if args.nochat:
+        return output
+    else:
+        return output.split('<s>')[-2]
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--model', type=str, default="models/results")
     parser.add_argument('--lora', action='store_true', help="Whether to use LoRA for inference. This assumes adapters as model argument. Default is False.")
     parser.add_argument('--translate', action='store_true', help="For inference on gpt-sw3-translator")
+    parser.add_argument('--nochat', action='store_true', help="Skip Chat Template")
 
+    parser.set_defaults(nochat=False)
     parser.set_defaults(lora=False)
     parser.set_defaults(translate=False)
 
@@ -109,7 +114,10 @@ if __name__ == '__main__':
             bnb_4bit_quant_type="nf4",             # Quantization algorithm to use 
             bnb_4bit_compute_dtype=torch.bfloat16  # data type of model after quantization
         )    
-        model = AutoModelForCausalLM.from_pretrained(model_path, quantization_config=None, torch_dtype=torch.bfloat16).to(device)
+        model = AutoModelForCausalLM.from_pretrained(model_path, 
+                                                     #quantization_config=quantization_config, 
+                                                     torch_dtype=torch.bfloat16
+                                                     ).to(device)
 
     tokenizer = AutoTokenizer.from_pretrained(model_path)
     stop_on_token_criteria = StopOnTokenCriteria(stop_token_id=tokenizer.bos_token_id)
@@ -129,7 +137,7 @@ if __name__ == '__main__':
         system_prompt = None
     while True:
 
-        print("Type prompt: ([press ENTER to exit], [type SYS to change System prompt])")
+        print("Type prompt: ([press ENTER to exit], [type SYS to change System prompt], [type --file to read from file])")
         prompt = input()
 
         if prompt == "":
@@ -140,9 +148,18 @@ if __name__ == '__main__':
             system_prompt = input()
             parsed_prompt = parse_input(system_prompt, prompt)
         else:
+            if prompt == "--file":
+                print("Enter file path:")
+                file_path = input()
+                with open(file_path, 'r') as f:
+                    prompt = f.read()
+
             if args.translate:
                 parsed_prompt = parse_translation(prompt)
                 print(generate_translation(model, tokenizer, parsed_prompt))
             else:
-                parsed_prompt = parse_input(system_prompt, prompt)
-                print(generate(model, tokenizer, parsed_prompt))
+                if not args.nochat:
+                    parsed_prompt = parse_input(system_prompt, prompt)
+                    print(generate(model, tokenizer, parsed_prompt))
+                else: 
+                    print(generate(model, tokenizer, prompt))

@@ -16,9 +16,9 @@ BF16_SUPPORT = torch.cuda.is_bf16_supported()
 DTYPE = torch.bfloat16 if BF16_SUPPORT else torch.float16
 
 """Hyperparameters for fine-tuning"""
-gradient_accumulation_steps = 8
+gradient_accumulation_steps = 10
 learning_rate = 2e-4
-batch_size = 8
+batch_size = 3
 epochs = 3
 lr_scheduler_type = "cosine"
 warmup_steps = 250
@@ -88,7 +88,7 @@ def train(model_id, dataset, output, split, wandb_log=False):
         quantization_config = bnb_config if q_lora else None,
         token = None,
         trust_remote_code=True,
-        attn_implementation= "flash_attention_2" if use_flash_attention else None
+        # attn_implementation= "flash_attention_2" if use_flash_attention else None
     )
 
     tokenizer = AutoTokenizer.from_pretrained(

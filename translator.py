@@ -159,6 +159,23 @@ def translate_sv_en(path, output):
                         json.dump(dct, out)
                     except ValueError as e:
                         break
+
+
+def translate_dpo(path, output, keep_original=False):
+    latest_line = 0 #
+    with open(path, "r") as file:
+        lines = file.readlines()
+    
+    with open(output, "w" if latest_line == 0 else "a") as out:
+        for _, line in enumerate(tqdm(lines[latest_line:], initial=latest_line, total=len(lines[latest_line:])):
+            data = json.loads(line)
+            conv_list = process_data(data['conversations'], keep_original=keep_original)
+            if conv_list is None:
+                continue
+            data['conversations'] = conv_list 
+            json.dump(data, out)
+            out.write("\n")
+            out.flush()
                 
 
 translate_json("./data/SlimOrca-cleaned.jsonl", "./data/SlimOrca-sv-CONTINUE.jsonl", keep_original=True)
