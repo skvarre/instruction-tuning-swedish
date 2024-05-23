@@ -160,25 +160,48 @@ def translate_sv_en(path, output):
                     except ValueError as e:
                         break
 
+def process_dpo(conv_list, keep_original=False):
+    for pair in conv_list:
+        if keep_original:
+            new_conv = []
 
-def translate_dpo(path, output, keep_original=False):
-    latest_line = 0 #
+        if conv_list[pair] == "":
+            continue
+
+        # Avoid translating if token length is too long before translation.
+        if len(pipe.tokenizer.encode((conv_list[pair]))) <= 2048:
+            try:
+                if keep_original:
+                    new_conv.append(conv_list[pair])
+                    new_conv.append(translate(conv_list[pair]))
+                    conv_list[pair] = new_conv
+                else:
+                    conv_list[pair] = translate(conv_list[pair]) 
+            except ValueError as e:
+                return None
+        else:
+            return None
+    return conv_list
+
+def transalte_dpo(path, output, keep_original=False):
+    latest_line = 0
+
     with open(path, "r") as file:
         lines = file.readlines()
     
     with open(output, "w" if latest_line == 0 else "a") as out:
-        for _, line in enumerate(tqdm(lines[latest_line:], initial=latest_line, total=len(lines[latest_line:])):
+        for _, line in enumerate(tqdm(lines[latest_line:], initial=latest_line, total=len(lines[latest_line:]))):
             data = json.loads(line)
-            conv_list = process_data(data['conversations'], keep_original=keep_original)
+            conv_list = process_dpo(data, keep_original=keep_original)
             if conv_list is None:
                 continue
-            data['conversations'] = conv_list 
+            data = conv_list 
             json.dump(data, out)
             out.write("\n")
             out.flush()
                 
 
-translate_json("./data/SlimOrca-cleaned.jsonl", "./data/SlimOrca-sv-CONTINUE.jsonl", keep_original=True)
+transalte_dpo("./one.jsonl", "./one-sv.jsonl", keep_original=True)
 
 # if __name__ == '__main__':
 #     while True:
