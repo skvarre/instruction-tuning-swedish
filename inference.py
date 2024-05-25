@@ -51,7 +51,19 @@ def generate_translation(model, tokenizer, prompt):
     output = tokenizer.decode(outputs[0], skip_special_tokens=False)
     return output.split('<s>Bot: ')[-1]
 
-def generate(model, tokenizer, prompt):    
+def generate(model, tokenizer, prompt):
+
+    # messages = [
+    # {"role": "system", "content": "Du är en AI-assistent. Förklara om meningen är grammatiskt korrekt."},
+    # {"role": "user", "content": "Jag har ett badboll."},
+    # ]
+
+    # inputs = tokenizer.apply_chat_template(
+    #     messages,
+    #     add_generation_prompt=True,
+    #     return_tensors="pt"
+    # ).to(device)
+
     inputs = tokenizer.encode(prompt, return_tensors="pt").to(device)
     dynamic_max_length = MAX_LENGTH - inputs.shape[1]
     outputs = model.generate(

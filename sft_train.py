@@ -16,7 +16,7 @@ BF16_SUPPORT = torch.cuda.is_bf16_supported()
 DTYPE = torch.bfloat16 if BF16_SUPPORT else torch.float16
 
 """Hyperparameters for fine-tuning"""
-gradient_accumulation_steps = 10
+gradient_accumulation_steps = 15
 learning_rate = 2e-4
 batch_size = 3
 epochs = 3
@@ -51,6 +51,28 @@ def formatting_prompts(examples):
         texts.append(text)
     return {"text": texts}
 
+"""
+Append prompts without system turn. 
+If keep_system is set to True, the system turn is included in User turn.
+"""
+def formatting_prompts_without_system(examples, keep_system=False):
+    convs = examples['conversations']
+    texts = []
+    mapper = { "system": "", "human": "\nUSER:\n", "gpt" : "\nASSISTANT:\n"}
+    end_mapper = {"system" : "", "human": "\n<s>", "gpt": "\n<s>"}
+
+    if keep_system:
+        # Append system-messages at the beginning of user turn.
+        for convo in convs:
+            if convo[0]['from'] == "system":
+                convo[1]['value'] = f"{convo[0]['value']}\n\n{convo[1]['value']}"
+
+    for convo in convs:
+        # DISGUSTING LINE BUT IT YA KNOW IT WORKS
+        text = f"<|endoftext|><s>{"".join(f"{mapper[(turn := x['from'])]}{x['value']}{end_mapper[turn]}" for x in convo if x['from'] != "system")}"
+        texts.append(text)
+    return {"text": texts}
+
 """Format prompts for translation task."""
 def formatting_translation(examples):
     prompt_pairs = [
@@ -60,9 +82,9 @@ def formatting_translation(examples):
     return {"text": prompt_pairs}
 
 def train(model_id, dataset, output, split, wandb_log=False):
-
+    dataset = dataset.shuffle() 
     dataset = dataset['train'].train_test_split(test_size=split)
-    dataset = dataset.map(formatting_prompts, batched=True,)
+    dataset = dataset.map(formatting_prompts_without_system, batched=True, fn_kwargs={"keep_system": True})
     steps_per_epoch = len(dataset['train']) // (batch_size * gradient_accumulation_steps)
     
     if wandb_log:
@@ -170,8 +192,7 @@ if __name__ == '__main__':
                 dataset = load_dataset(args.dataset)
             else:
                 # Running local dataset. 
-                dataset = load_dataset('json', data_files=args.dataset)   
-                dataset = dataset.shuffle()             
+                dataset = load_dataset('json', data_files=args.dataset)               
         except:
             print("Dataset not found, please check dataset name.")
             exit()
