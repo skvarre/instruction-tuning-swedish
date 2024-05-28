@@ -35,7 +35,7 @@ def parse_input(system_prompt, prompt):
     if system_prompt:
         return f"<|endoftext|><s>\nSYSTEM\n{system_prompt}\n\n<s>USER:\n{prompt}\n<s>ASSISTANT:\n"
     else:
-        return f"<|endoftext|><s>\nUSER:\n{prompt}\n<s>ASSISTANT:\n"
+        return f"<|endoftext|><s>\nUSER:\n{prompt}\n<s>\nASSISTANT:\n"
     
 def generate_translation(model, tokenizer, prompt):
     inputs = tokenizer.encode(prompt, return_tensors="pt").to(device)

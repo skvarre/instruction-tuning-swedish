@@ -68,7 +68,7 @@ def formatting_prompts_without_system(examples, keep_system=False):
                 convo[1]['value'] = f"{convo[0]['value']}\n\n{convo[1]['value']}"
 
     for convo in convs:
-        # DISGUSTING LINE BUT IT YA KNOW IT WORKS
+        # DISGUSTING LINE BUT YA KNOW IT WORKS
         text = f"<|endoftext|><s>{"".join(f"{mapper[(turn := x['from'])]}{x['value']}{end_mapper[turn]}" for x in convo if x['from'] != "system")}"
         texts.append(text)
     return {"text": texts}
