@@ -22,11 +22,7 @@ def dot_diff(original_text, translated_text):
     translated_text = translated_text.count(".")
     return original_text != translated_text
 
-
-if __name__ == "__main__":
-    path = "./data/SlimOrca-sv-CONTINUE-2.jsonl"
-    output = "./data/SlimOrca-sv-CONTINUE-3.jsonl"
-
+def slim_orca_format(path, output):
     with open(path, "r") as file:
         lines = file.readlines()
 
@@ -36,7 +32,7 @@ if __name__ == "__main__":
             conv_list = data['conversations']
             skip = False
             for conv in conv_list:
-                if (dot_diff(conv['value'][0], conv['value'][1])):
+                if (line_diff(conv['value'][0], conv['value'][1])):
                     skip = True
                     break 
             if skip:
@@ -45,3 +41,33 @@ if __name__ == "__main__":
             json.dump(data, out)
             out.write("\n")
             out.flush()
+
+def dpo_format(path, output):
+    data = []
+    with open(path, "r") as file:
+        lines = file.readlines()
+
+    with open(output, "w") as out:
+        for i, line in enumerate(tqdm((lines))):
+            data = json.loads(line)
+            if data['system'] != "\"\"":
+                sys = json.loads(data['system'])
+                if (line_diff(sys[0], sys[0])):
+                    continue
+            if line_diff(data['question'][0], data['question'][1]) or \
+                line_diff(data['chosen'][0], data['chosen'][1]) or \
+                line_diff(data['rejected'][0], data['rejected'][1]):
+                continue
+            out.write(json.dumps(data))
+            out.write("\n")
+
+
+
+if __name__ == "__main__":
+    path = "./data/Orca-DPO-SV-2k-cleaned.jsonl"
+    output = "./data/Orca-DPO-SV-2k-cleaned-postprocessed.jsonl"
+
+    dpo_format(path, output)
+
+
+

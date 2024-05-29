@@ -55,7 +55,7 @@ def generate(model, tokenizer, prompt):
 
     # messages = [
     # {"role": "system", "content": "Du är en AI-assistent. Förklara om meningen är grammatiskt korrekt."},
-    # {"role": "user", "content": "Jag har ett badboll."},
+    # {"role": "user", "content": "Var ligger KTH egentligen?."},
     # ]
 
     # inputs = tokenizer.apply_chat_template(
@@ -68,7 +68,7 @@ def generate(model, tokenizer, prompt):
     dynamic_max_length = MAX_LENGTH - inputs.shape[1]
     outputs = model.generate(
         inputs,
-        max_length=dynamic_max_length,
+        max_length=MAX_LENGTH,
         do_sample=True,
         pad_token_id=tokenizer.pad_token_id,
         stopping_criteria=StoppingCriteriaList([stop_on_token_criteria])
