@@ -195,8 +195,8 @@ def process_dpo(conv_list, keep_original=False):
             return None
     return conv_list
 
-def transalte_dpo(path, output, keep_original=False):
-    latest_line = 0
+def translate_dpo(path, output, keep_original=False):
+    latest_line = 2096
 
     with open(path, "r") as file:
         lines = file.readlines()
@@ -242,37 +242,37 @@ def process_dpo_batch(conv_list, keep_original=False):
             translated_idx += 1
 
     return conv_list
-                
-def transalte_dpo(path, output, keep_original=False, batch_size=8):
-    latest_line = 2096
+#batch                
+# def translate_dpo(path, output, keep_original=False, batch_size=8):
+#     latest_line = 2096
 
-    with open(path, "r") as file:
-        lines = file.readlines()
+#     with open(path, "r") as file:
+#         lines = file.readlines()
     
-    with open(output, "w" if latest_line == 0 else "a") as out:
-        batch_data = []
-        for _, line in enumerate(tqdm(lines[latest_line:], initial=latest_line, total=len(lines[latest_line:]))):
-            data = json.loads(line)
-            batch_data.append(data)
-            if len(batch_data) >= batch_size:
-                for data in batch_data:
-                    conv_list = process_dpo_batch(data, keep_original=keep_original)
-                    if conv_list is None:
-                        continue
-                    json.dump(conv_list, out)
-                    out.write("\n")
-                    out.flush()
-                batch_data = []
-        if batch_data:
-            for data in batch_data:
-                conv_list = process_dpo_batch(data, keep_original=keep_original)
-                if conv_list is None:
-                    continue
-                json.dump(conv_list, out)
-                out.write("\n")
-                out.flush()
+#     with open(output, "w" if latest_line == 0 else "a") as out:
+#         batch_data = []
+#         for _, line in enumerate(tqdm(lines[latest_line:], initial=latest_line, total=len(lines[latest_line:]))):
+#             data = json.loads(line)
+#             batch_data.append(data)
+#             if len(batch_data) >= batch_size:
+#                 for data in batch_data:
+#                     conv_list = process_dpo_batch(data, keep_original=keep_original)
+#                     if conv_list is None:
+#                         continue
+#                     json.dump(conv_list, out)
+#                     out.write("\n")
+#                     out.flush()
+#                 batch_data = []
+#         if batch_data:
+#             for data in batch_data:
+#                 conv_list = process_dpo_batch(data, keep_original=keep_original)
+#                 if conv_list is None:
+#                     continue
+#                 json.dump(conv_list, out)
+#                 out.write("\n")
+#                 out.flush()
 
-transalte_dpo("./data/Orca-DPO-pairs.jsonl", "./data/Orca-DPO-pairs-sv.jsonl", keep_original=True, batch_size=8)
+translate_dpo("./data/Orca-DPO-pairs.jsonl", "./data/Orca-DPO-pairs-geq2k.jsonl", keep_original=True)
 
 # if __name__ == '__main__':
 #     while True:

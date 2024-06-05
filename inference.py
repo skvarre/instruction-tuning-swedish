@@ -163,8 +163,12 @@ if __name__ == '__main__':
             if prompt == "--file":
                 print("Enter file path:")
                 file_path = input()
-                with open(file_path, 'r') as f:
-                    prompt = f.read()
+                try:
+                    with open(file_path, 'r') as f:
+                        prompt = f.read()
+                except:
+                    print("File not found.")
+                    continue
 
             if args.translate:
                 parsed_prompt = parse_translation(prompt)

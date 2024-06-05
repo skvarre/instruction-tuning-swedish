@@ -16,7 +16,7 @@ BF16_SUPPORT = torch.cuda.is_bf16_supported()
 DTYPE = torch.bfloat16 if BF16_SUPPORT else torch.float16
 
 """Hyperparameters for fine-tuning"""
-gradient_accumulation_steps = 15
+gradient_accumulation_steps = 20
 learning_rate = 2e-4
 batch_size = 3
 epochs = 3
@@ -28,9 +28,9 @@ use_gradient_checkpointing = True
 use_flash_attention = True 
 """LoRA hyperparameters"""
 q_lora = True # Set to false for full finetune without quantization
-lora_alpha = 256
+lora_alpha = 512
 lora_dropout = 0
-lora_rank = 128
+lora_rank = 256
 
 # For logging to wandb 
 if q_lora:
@@ -137,7 +137,7 @@ def train(model_id, dataset, output, split, wandb_log=False):
         output_dir=output,
         num_train_epochs=epochs,
         per_device_train_batch_size=batch_size,
-        per_device_eval_batch_size=batch_size,
+        per_device_eval_batch_size=batch_size-2,
         gradient_accumulation_steps=gradient_accumulation_steps,
         warmup_steps=warmup_steps,
         weight_decay=weight_decay,
