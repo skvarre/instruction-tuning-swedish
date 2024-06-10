@@ -64,8 +64,8 @@ def dpo_format(path, output):
 
 
 if __name__ == "__main__":
-    path = "./data/Orca-DPO-SV-2k-cleaned.jsonl"
-    output = "./data/Orca-DPO-SV-2k-cleaned-postprocessed.jsonl"
+    path = "./data/Orca-DPO-pairs-geq2k.jsonl"
+    output = "./data/Orca-DPO-pairs-geq2k-postprocessed.jsonl"
 
     dpo_format(path, output)
 
