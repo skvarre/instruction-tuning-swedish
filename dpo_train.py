@@ -2,12 +2,13 @@
 Trainer script for DPO alignment.
 """
 import argparse
-from trl import DPOTrainer 
+from trl import DPOTrainer, DPOConfig
 from transformers import AutoTokenizer, AutoModelForCausalLM, TrainingArguments, BitsAndBytesConfig
 import torch 
 from datasets import load_dataset
 from peft import LoraConfig
 import wandb 
+from math import sqrt 
 
 USE_SYSTEM_PROMPTS = False # Append system prompts to question.
 MAX_SEQ_LENGTH = 2048
@@ -53,6 +54,7 @@ def train(args):
         target_modules="all-linear",
         task_type="CAUSAL_LM", 
     )
+
     print("Loading model...")
     model = AutoModelForCausalLM.from_pretrained(
         model_path,
@@ -74,13 +76,13 @@ def train(args):
     dataset = dataset.train_test_split(test_size=args.split)
     steps_per_epoch = len(dataset['train']) // (args.batch_size * gradient_accumulation_steps)
 
-    training_args = TrainingArguments(
+    training_args = DPOConfig(
         report_to="wandb" if wandb_log else None,
         output_dir=args.output,
         gradient_checkpointing=True,
         num_train_epochs=args.epochs,
         per_device_train_batch_size=args.batch_size,
-        per_device_eval_batch_size=args.batch_size,
+        per_device_eval_batch_size=args.batch_size//2,
         gradient_accumulation_steps=gradient_accumulation_steps,
         optim="adamw_torch_fused",
         learning_rate=args.lr,
@@ -89,7 +91,7 @@ def train(args):
         warmup_ratio=0.1,
         lr_scheduler_type="cosine",
         logging_steps=1,
-        max_grad_norm=0.3,
+        max_grad_norm=1.0 * sqrt(gradient_accumulation_steps),
         save_steps=steps_per_epoch,
         save_total_limit=3,   
         metric_for_best_model="eval_loss",
