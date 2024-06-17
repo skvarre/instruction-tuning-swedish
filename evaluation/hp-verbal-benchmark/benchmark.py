@@ -55,8 +55,7 @@ def output_results(results, model_path, n_shot):
         f.write(json.dumps(results) + "\n")
 
 
-def benchmark_model(model_path):
-    n_shot = 5
+def benchmark_model(model_path, n_shot):
     dtype = torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.float16
     # Load model and tokenizer
     model = AutoModelForCausalLM.from_pretrained(model_path, 
