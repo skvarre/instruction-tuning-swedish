@@ -177,6 +177,6 @@ qlora-*
 eval.ipynb
 gpt-sw3-*
 /notebooks/
-benchmark.py
+./benchmark.py
 distilabel-test.py
 *.ipynb

@@ -1,0 +1,78 @@
+import torch 
+from transformers import AutoModelForCausalLM, AutoTokenizer, StoppingCriteria, StoppingCriteriaList
+import json
+import random
+from enums import AI_SWE_GPTSW3, CUSTOM_GPTSW3
+from tqdm import tqdm 
+from prompts import ORD_prompt, LÄS_prompt, MEK_prompt, extract_few_shot
+
+MAX_LENGTH = 2048
+DEVICE = "cuda:0" if torch.cuda.is_available() else "cpu"
+
+class StopOnTokenCriteria(StoppingCriteria):
+    def __init__(self, stop_token_id):
+        self.stop_token_id = stop_token_id
+
+    def __call__(self, input_ids, scores, **kwargs):
+        return input_ids[0, -1] == self.stop_token_id
+
+def generate(model, tokenizer, prompt, stop_on_token_criteria, mapper):
+    inputs = tokenizer.encode(prompt, return_tensors="pt").to(DEVICE)
+    dynamic_max_length = MAX_LENGTH - inputs.shape[1]
+    outputs = model.generate(
+        inputs,
+        max_length=dynamic_max_length,
+        do_sample=True,
+        pad_token_id=tokenizer.pad_token_id,
+        stopping_criteria=StoppingCriteriaList([stop_on_token_criteria])
+    )
+    
+    output = tokenizer.decode(outputs[0], skip_special_tokens=False).split(f"{mapper["assistant"]}\n")[-1].split('<s>')[0]
+    return output
+
+
+def parse_data(data):
+    random.shuffle(data)
+    data_lists = [[],[],[]]
+    for d in data:
+        if d['test'] == "ORD":
+            data_lists[0].append(d)
+        elif d['test'] == "LÄS":
+            data_lists[1].append(d)
+        elif d['test'] == "MEK":
+            data_lists[2].append(d)
+    return data_lists
+
+
+def benchmark_model(model):
+    dtype = torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.float16
+    # Load model and tokenizer
+    # model = AutoModelForCausalLM.from_pretrained(model, 
+    #                                              torch_dtype = dtype).to(DEVICE)
+    # tokenizer = AutoTokenizer.from_pretrained(model)
+    # stop_on_token_criteria = StopOnTokenCriteria(stop_token_id=tokenizer.bos_token_id)
+    bos_token = CUSTOM_GPTSW3.bos_token.value
+    eos_token = CUSTOM_GPTSW3.eos_token.value
+    mapper = CUSTOM_GPTSW3.mapper.value
+
+    prompts = {"ord": ORD_prompt, "läs": LÄS_prompt, "mek": MEK_prompt}
+    tasks = ["ord", "läs", "mek"]
+
+    # Load data. Also available at hf: skvarre/hogskoleprovet-ORD-LAS-MEK
+    path = "hogskoleprovet-ORD-LAS-MEK.jsonl"
+    with open(path, "r") as f:
+        data = f.readlines()
+    data = parse_data([json.loads(d) for d in data])
+    data = {t : data[i] for i, t in enumerate(tasks)}
+    # Benchmark model
+    print("Preparing to benchmark model on Högskoleprovet: ORD, LÄS, MEK.")
+    for t in tasks:
+        print(f"Currently benchmarking model on {t.upper()}.")
+        few_shot_examples = extract_few_shot(data[t][:5], t, eos_token, bos_token, mapper)
+        benchmark_data = data[t][5:]
+
+        for i in tqdm(range(10)):
+            for _, example in tqdm(enumerate(benchmark_data)):
+                prompt = f"{few_shot_examples}\n{prompts[t](example, bos_token, mapper)}"
+                output = generate(model, tokenizer, prompt, stop_on_token_criteria, mapper)
+                calculate_score()
