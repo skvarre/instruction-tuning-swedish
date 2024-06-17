@@ -44,11 +44,12 @@ def parse_data(data):
             data_lists[2].append(d)
     return data_lists
 
-def output_results(results, model_path):
+def output_results(results, model_path, n_shot):
     output_path = "hp-benchmark-results.jsonl"
-    date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    date = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     results["date"] = date
     results["model"] = model_path.split("/")[-1]
+    results["n-shot"] = n_shot
 
     with open(output_path, "a") as f:
         f.write(json.dumps(results) + "\n")
@@ -81,7 +82,7 @@ def benchmark_model(model_path):
 
     results = {"ord": [], "läs": [], "mek": []}
     for t in tasks:
-        print(f"Currently benchmarking model on {t.upper()}.")
+        print(f"Currently benchmarking model on {t.upper()} with {0 if t == "läs" else n_shot}-shot prompts.")
         if n_shot > 0 and t in ["ord", "mek"]:
             """We have to perform zero-shot on LÄS due to context length constraints."""
             few_shot_examples = extract_few_shot(data[t][:n_shot], t, eos_token, bos_token, mapper)
@@ -90,19 +91,14 @@ def benchmark_model(model_path):
             few_shot_examples = f"{eos_token}{bos_token}\n"
         benchmark_data = data[t][n_shot:]
 
-        if t == "ord":
-            continue 
-
         for i in tqdm(range(10)):
             sub_results = []
             for _, example in tqdm(enumerate(benchmark_data), total=len(benchmark_data)):
                 prompt = f"{few_shot_examples}\n{prompts[t](example, bos_token, mapper)}"
-                if tokenizer.encode(prompt, return_tensors="pt").to(DEVICE).shape[1] <= MAX_LENGTH:
-                    print("lol")
-                    output = generate(model, tokenizer, prompt, stop_on_token_criteria, mapper)
-                    sub_results.append(judge_answer(example, output))
+                output = generate(model, tokenizer, prompt, stop_on_token_criteria, mapper)
+                sub_results.append(judge_answer(example, output))
             results[t].append(sub_results)
     
-    final_results = calculate_all(results, model_path)
-    output_results(final_results)
+    final_results = calculate_all(results)
+    output_results(final_results, model_path, n_shot)
     
