@@ -8,14 +8,19 @@ def calculate_all(results):
     average_accuracy_läs = calculate_accuracy(accuracy_läs)
     average_accuracy_mek = calculate_accuracy(accuracy_mek)
     """Calculate the total accuracy for the entire HP-test and take the average over all test accuracies."""
-    total_acc = 0
+    average_accuracy_total = 0
+    total_accuracy = []
     for i in range(10):
-        total_acc += calculate_accuracy(results["ord"][i] + results["läs"][i] + results["mek"][i])
-    average_accuracy_total = total_acc / 10
+        acc = calculate_accuracy(results["ord"][i] + results["läs"][i] + results["mek"][i])
+        total_accuracy.append(acc)
+        average_accuracy_total += acc
+
+    average_accuracy_total /= 10
 
     return {"ord": accuracy_ord, 
             "läs": accuracy_läs,
             "mek": accuracy_mek,
+            "total": total_accuracy,
             "avg_ord": average_accuracy_ord, 
             "avg_läs": average_accuracy_läs, 
             "avg_mek": average_accuracy_mek, 

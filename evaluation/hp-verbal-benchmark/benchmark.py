@@ -35,13 +35,9 @@ def generate(model, tokenizer, prompt, stop_on_token_criteria, mapper):
 def parse_data(data):
     random.shuffle(data)
     data_lists = [[],[],[]]
+    mapper = {"ORD": 0, "LÄS": 1, "MEK": 2}
     for d in data:
-        if d['test'] == "ORD":
-            data_lists[0].append(d)
-        elif d['test'] == "LÄS":
-            data_lists[1].append(d)
-        elif d['test'] == "MEK":
-            data_lists[2].append(d)
+        data_lists[mapper[d["test"]]].append(d)
     return data_lists
 
 def output_results(results, model_path, n_shot):
@@ -62,9 +58,9 @@ def benchmark_model(model_path, n_shot):
                                                  torch_dtype = dtype).to(DEVICE)
     tokenizer = AutoTokenizer.from_pretrained(model_path)
     stop_on_token_criteria = StopOnTokenCriteria(stop_token_id=tokenizer.bos_token_id)
-    bos_token = CUSTOM_GPTSW3.bos_token.value
-    eos_token = CUSTOM_GPTSW3.eos_token.value
-    mapper = CUSTOM_GPTSW3.mapper.value
+    bos_token = AI_SWE_GPTSW3.bos_token.value
+    eos_token = AI_SWE_GPTSW3.eos_token.value
+    mapper = AI_SWE_GPTSW3.mapper.value
 
     prompts = {"ord": ORD_prompt, "läs": LÄS_prompt, "mek": MEK_prompt}
     tasks = ["ord", "läs", "mek"]
