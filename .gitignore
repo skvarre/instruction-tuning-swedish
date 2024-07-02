@@ -176,7 +176,6 @@ lilac.yml
 qlora-*
 eval.ipynb
 gpt-sw3-*
-/notebooks/
 ./benchmark.py
 distilabel-test.py
 *.ipynb
